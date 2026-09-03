@@ -45,7 +45,7 @@ Sistema de reservas de canchas deportivas (fútbol, fulbito, pádel, tenis y squ
 
 ### 4️⃣ Diseño de las pantallas en Figma (6 pantallas · mínimo requerido: 5)
 
-> 🔗 **Prototipo navegable en Figma:** `PEGAR_AQUI_EL_LINK_DE_TU_FIGMA`
+> 🔗 **Prototipo navegable en Figma:** `https://www.figma.com/proto/LB87NlUOHl01KwCjoppLgG/Sistema-de-canchas?node-id=2-9&t=fFwPIvKcNqkH6Xxx-1`
 
 | # | Pantalla diseñada | Elementos del prototipo |
 |---|--------------------|--------------------------|
