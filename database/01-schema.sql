@@ -35,7 +35,7 @@ CREATE TABLE IF NOT EXISTS canchas (
   descripcion    TEXT         NOT NULL DEFAULT '',
   direccion      VARCHAR(220) NOT NULL DEFAULT '',
   comuna         VARCHAR(100) NOT NULL,
-  ciudad         VARCHAR(100) NOT NULL DEFAULT 'Santiago',
+  ciudad         VARCHAR(100) NOT NULL DEFAULT 'Lima',
   precio_hora    NUMERIC(8,2) NOT NULL CHECK (precio_hora > 0),      -- Soles peruanos (S/) por hora
   calificacion   NUMERIC(2,1) NOT NULL DEFAULT 4.5 CHECK (calificacion BETWEEN 0 AND 5),
   num_opiniones  INTEGER      NOT NULL DEFAULT 0,

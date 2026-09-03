@@ -16,7 +16,7 @@ Sistema de reservas de canchas deportivas (fútbol, fulbito, pádel, tenis y squ
 
 ### 1️⃣ Descripción general de la organización
 
-**CourtHub** es una empresa administradora de complejos deportivos que gestiona una red de **9 canchas asociadas** de pádel, fútbol 7 y 11, tenis y squash. Cada sede ofrece alquiler de canchas por bloques horarios, servicios complementarios (estacionamiento, camarines, duchas, cafetería, iluminación LED) y **clases deportivas impartidas por entrenadores certificados** con cupos limitados.
+**CourtHub** es una empresa administradora de complejos deportivos que gestiona una red de **9 canchas asociadas** en **Lima Metropolitana (Perú)** — pádel, fútbol 7 y 11, tenis y squash. Cada sede ofrece alquiler de canchas por bloques horarios, servicios complementarios (estacionamiento, camarines, duchas, cafetería, iluminación LED) y **clases deportivas impartidas por entrenadores certificados** con cupos limitados.
 
 - **Modelo de negocio:** alquiler de canchas por hora (precios en **soles peruanos, S/**) + inscripciones a clases + cargo por servicio del 10 % sobre cada reserva.
 - **Actores del sistema:** *Cliente* (reserva y se inscribe), *Entrenador* (dicta clases), *Administrador* (supervisa todas las reservas de la red).

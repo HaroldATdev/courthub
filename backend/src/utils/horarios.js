@@ -19,9 +19,9 @@ function horaCorta(h) {
   return String(h).slice(0, 5);
 }
 
-/** Fecha actual (hora de Santiago) en formato ISO yyyy-mm-dd. */
+/** Fecha actual (hora de Lima) en formato ISO yyyy-mm-dd. */
 function hoyISO() {
-  return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Santiago' });
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'America/Lima' });
 }
 
 module.exports = { BLOQUES, sumarMinutos, horaCorta, hoyISO };

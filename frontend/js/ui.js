@@ -9,7 +9,7 @@
   CH.fmtFecha = function (iso, opts) {
     if (!iso) return '—';
     var dt = new Date(String(iso).slice(0, 10) + 'T12:00:00');
-    return CH.cap(dt.toLocaleDateString('es-CL', opts || { weekday: 'long', day: 'numeric', month: 'short' }));
+    return CH.cap(dt.toLocaleDateString('es-PE', opts || { weekday: 'long', day: 'numeric', month: 'short' }));
   };
   /** Fallback de imagen si Unsplash falla (usa picsum con semilla determinista). */
   CH.imgFallback = function (img, seed) {

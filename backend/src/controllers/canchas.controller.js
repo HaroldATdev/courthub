@@ -63,7 +63,7 @@ exports.disponibilidad = async (req, res, next) => {
   try {
     const fecha = req.query.fecha || hoyISO();
     const hoy = hoyISO();
-    const ahora = new Date().toLocaleTimeString('sv-SE', { timeZone: 'America/Santiago' }).slice(0, 5);
+    const ahora = new Date().toLocaleTimeString('sv-SE', { timeZone: 'America/Lima' }).slice(0, 5);
 
     const ocupadas = await query(
       `SELECT hora_inicio FROM reservas

@@ -55,7 +55,7 @@ exports.crear = async (req, res, next) => {
       return res.status(400).json({ error: 'Datos de reserva incompletos o inválidos.' });
     }
     const hoy = hoyISO();
-    const ahora = new Date().toLocaleTimeString('sv-SE', { timeZone: 'America/Santiago' }).slice(0, 5);
+    const ahora = new Date().toLocaleTimeString('sv-SE', { timeZone: 'America/Lima' }).slice(0, 5);
     if (fecha < hoy || (fecha === hoy && hora_inicio <= ahora)) {
       return res.status(400).json({ error: 'No puedes reservar bloques que ya pasaron.' });
     }

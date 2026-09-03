@@ -15,8 +15,8 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/styles.css">
-  <script src="js/icons.js"></script>
+  <link rel="stylesheet" href="css/styles.css?v=2">
+  <script src="js/icons.js?v=2"></script>
   <script>if (!localStorage.getItem('ch_user')) location.replace('index.html');</script>
 </head>
 <body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
@@ -123,9 +123,9 @@
   </main>
 
   <div id="ch-footer"></div>
-  <script src="js/data.js"></script>
-  <script src="js/api.js"></script>
-  <script src="js/ui.js"></script>
+  <script src="js/data.js?v=2"></script>
+  <script src="js/api.js?v=2"></script>
+  <script src="js/ui.js?v=2"></script>
   <script>
     (function () {
       CH.requireAuth();
@@ -162,7 +162,7 @@
         hero.onerror = function () { CH.imgFallback(hero, 'cancha' + cancha.id); };
         document.getElementById('hero-tipo').textContent = cancha.subtipo || (CH.Mock.DEPORTES[cancha.tipo] || cancha.tipo);
         document.getElementById('c-nombre').textContent = 'Cancha ' + cancha.nombre.replace('Complejo Deportivo ', '') + ' - Complejo Principal';
-        document.getElementById('c-dir').textContent = cancha.direccion || (cancha.comuna + ', Santiago');
+        document.getElementById('c-dir').textContent = cancha.direccion || (cancha.comuna + ', Lima');
         document.getElementById('c-cal').textContent = Number(cancha.calificacion).toFixed(1);
         document.getElementById('c-op').textContent = '(' + cancha.opiniones + ' opiniones de jugadores)';
         document.getElementById('c-desc').textContent = cancha.descripcion || '';
@@ -178,7 +178,7 @@
       function renderCalendario() {
         var base = new Date();
         var visto = new Date(base.getFullYear(), base.getMonth() + offset, 1);
-        document.getElementById('cal-titulo').textContent = CH.cap(visto.toLocaleDateString('es-CL', { month: 'long' })) + ' ' + visto.getFullYear();
+        document.getElementById('cal-titulo').textContent = CH.cap(visto.toLocaleDateString('es-PE', { month: 'long' })) + ' ' + visto.getFullYear();
 
         var primerDia = (visto.getDay() + 6) % 7; // lunes = 0
         var totalDias = new Date(visto.getFullYear(), visto.getMonth() + 1, 0).getDate();
