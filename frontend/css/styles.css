@@ -1,0 +1,148 @@
+/* ============================================================
+   CourtHub · styles.css — Componentes compartidos
+   (complementa a TailwindCSS; usa la paleta primary)
+   ============================================================ */
+
+:root {
+  --primary: #10b981;
+  --primary-dark: #059669;
+  --ink: #0f172a;
+}
+
+html { scroll-behavior: smooth; }
+body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; }
+
+/* ---------- Animaciones ---------- */
+@keyframes chFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+.fade-up { animation: chFadeUp .35s ease both; }
+@keyframes chToastIn { from { opacity: 0; transform: translateY(14px) scale(.97); } to { opacity: 1; transform: none; } }
+
+/* ---------- Botones ---------- */
+.btn-primary {
+  display: inline-flex; align-items: center; justify-content: center; gap: .5rem;
+  background: var(--primary); color: #fff; font-weight: 600; font-size: .875rem;
+  padding: .68rem 1.25rem; border-radius: .75rem; border: 1px solid transparent;
+  cursor: pointer; transition: all .15s ease; white-space: nowrap;
+  box-shadow: 0 8px 20px -8px rgba(16, 185, 129, .55);
+}
+.btn-primary:hover { background: var(--primary-dark); }
+.btn-primary:active { transform: scale(.98); }
+.btn-primary:disabled { background: #a7f3d0; box-shadow: none; cursor: not-allowed; }
+
+.btn-outline {
+  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  border: 1px solid #e5e7eb; background: #fff; color: #334155; font-weight: 600;
+  font-size: .82rem; padding: .55rem 1rem; border-radius: .7rem; cursor: pointer; transition: all .15s;
+}
+.btn-outline:hover { border-color: var(--primary); color: var(--primary-dark); background: #f0fdf7; }
+
+.btn-danger {
+  display: inline-flex; align-items: center; justify-content: center; gap: .45rem;
+  border: 1px solid #fecaca; background: #fff; color: #ef4444; font-weight: 600;
+  font-size: .82rem; padding: .55rem 1rem; border-radius: .7rem; cursor: pointer; transition: all .15s;
+}
+.btn-danger:hover { background: #fef2f2; border-color: #ef4444; }
+
+/* ---------- Pills / filtros ---------- */
+.pill {
+  padding: .5rem 1.15rem; border-radius: 9999px; font-size: .85rem; font-weight: 500;
+  border: 1px solid #e5e7eb; background: #fff; color: #475569; cursor: pointer; transition: all .15s;
+}
+.pill:hover { border-color: var(--primary); color: var(--primary-dark); }
+.pill.active { background: var(--primary); border-color: var(--primary); color: #fff; font-weight: 600; }
+/* ---------- Formularios ---------- */
+.ch-label { font-size: .8rem; font-weight: 600; color: #334155; display: block; margin-bottom: .4rem; }
+.ch-label-tiny { font-size: .65rem; font-weight: 700; letter-spacing: .08em; color: #9ca3af; text-transform: uppercase; }
+
+.ch-input, .ch-select, .ch-textarea {
+  width: 100%; background: #fff; border: 1px solid #e5e7eb; border-radius: .75rem;
+  font-size: .875rem; color: #0f172a; outline: none; transition: border-color .15s, box-shadow .15s;
+}
+.ch-input { padding: .72rem 1rem .72rem 2.7rem; }
+.ch-input-plain { padding: .72rem 1rem; }
+.ch-select {
+  appearance: none; padding: .5rem 2.1rem .5rem .8rem; border-radius: .6rem;
+  font-size: .8rem; font-weight: 500; color: #334155; cursor: pointer;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E") no-repeat right .65rem center / 13px;
+}
+.ch-textarea { padding: .7rem .9rem; resize: vertical; }
+.ch-input:focus, .ch-select:focus, .ch-textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, .16); }
+
+.input-wrap { position: relative; }
+/* El ícono se inyecta DENTRO de <span data-icon>, por eso se posiciona el span */
+.input-wrap > span[data-icon],
+.input-wrap > svg {
+  position: absolute; left: .95rem; top: 50%; transform: translateY(-50%);
+  color: #9ca3af; pointer-events: none; display: inline-flex; align-items: center;
+}
+.input-wrap .eye-btn { position: absolute; right: .6rem; top: 50%; transform: translateY(-50%); color: #9ca3af; padding: .3rem; border-radius: .4rem; cursor: pointer; background: none; border: none; }
+.input-wrap .eye-btn:hover { color: #64748b; }
+
+/* ---------- Switch (Disponible Hoy) ---------- */
+.switch { position: relative; display: inline-block; width: 44px; height: 24px; flex: none; }
+.switch input { opacity: 0; width: 0; height: 0; }
+.switch .track { position: absolute; inset: 0; background: #e2e8f0; border-radius: 999px; transition: .2s; cursor: pointer; }
+.switch .track::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; background: #fff; border-radius: 50%; transition: .2s; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.switch input:checked + .track { background: var(--primary); }
+.switch input:checked + .track::after { transform: translateX(20px); }
+
+/* ---------- Tarjetas / etiquetas ---------- */
+.card { background: #fff; border: 1px solid #eef0f2; border-radius: 1rem; box-shadow: 0 1px 3px rgba(16,24,40,.05); }
+.tag { font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 6px; background: #f1f5f9; color: #475569; white-space: nowrap; }
+.badge { font-size: 12px; font-weight: 600; padding: 5px 13px; border-radius: 8px; white-space: nowrap; }
+.badge-confirmada { background: #d1fae5; color: #059669; }
+.badge-pendiente  { background: #fef3c7; color: #b45309; }
+.badge-completada { background: #dbeafe; color: #2563eb; }
+.badge-cancelada  { background: #fee2e2; color: #ef4444; }
+/* ---------- Bloques horarios (detalle cancha) ---------- */
+.slot {
+  padding: .6rem .4rem; border-radius: .6rem; font-size: .8rem; font-weight: 600; text-align: center;
+  border: 1px solid #a7f3d0; background: #ecfdf5; color: #047857; cursor: pointer; transition: all .12s;
+}
+.slot:hover:not(:disabled):not(.sel) { background: #d1fae5; }
+.slot.sel { background: var(--primary-dark); border-color: var(--primary-dark); color: #fff; box-shadow: 0 6px 14px -6px rgba(5,150,105,.6); }
+.slot:disabled { background: #f1f5f9; border-color: transparent; color: #cbd5e1; cursor: not-allowed; }
+
+/* ---------- Calendario ---------- */
+.cal-day {
+  height: 38px; border-radius: .55rem; font-size: .8rem; font-weight: 600;
+  display: grid; place-items: center; cursor: pointer; transition: all .12s; color: #334155;
+}
+.cal-day:hover:not(:disabled):not(.sel) { background: #ecfdf5; color: #047857; }
+.cal-day.sel { background: var(--primary); color: #fff; box-shadow: 0 5px 12px -5px rgba(16,185,129,.65); }
+.cal-day:disabled { color: #cbd5e1; cursor: not-allowed; background: transparent; }
+.cal-day.today { box-shadow: inset 0 0 0 1.5px #a7f3d0; }
+.cal-day.today.sel { box-shadow: none; }
+
+/* ---------- Modal ---------- */
+.ch-modal { position: fixed; inset: 0; z-index: 60; display: none; align-items: center; justify-content: center; padding: 1rem; background: rgba(15, 23, 42, .5); }
+.ch-modal.open { display: flex; }
+.ch-modal .box { background: #fff; border-radius: 1.25rem; width: 100%; max-width: 420px; padding: 1.6rem; animation: chFadeUp .25s ease both; max-height: 90vh; overflow: auto; }
+
+/* ---------- Utilidades ---------- */
+.link-green { color: var(--primary-dark); font-weight: 600; text-decoration: underline; text-underline-offset: 2px; }
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: #d7dde3; border-radius: 8px; border: 2px solid #f6f7f7; }
+::-webkit-scrollbar-track { background: transparent; }
+
+/* ---------- Tabs del login ---------- */
+.tab-btn { padding: .9rem 0; font-size: .95rem; font-weight: 600; color: #94a3b8; border-bottom: 2.5px solid transparent; margin-bottom: -1px; transition: .15s; cursor: pointer; }
+.tab-btn:hover { color: #475569; }
+.tab-btn.active { color: #0f172a; border-color: var(--primary); }
+
+/* ---------- Botón social (Google / Apple) ---------- */
+.social { display: flex; align-items: center; justify-content: center; gap: .6rem; border: 1px solid #e5e7eb; background: #fff; border-radius: .8rem; padding: .75rem 0; font-size: .875rem; font-weight: 600; color: #334155; cursor: pointer; transition: .15s; }
+.social:hover { background: #f8fafc; border-color: #cbd5e1; }
+
+/* ---------- Selector de método de pago ---------- */
+.metodo { display: flex; align-items: center; justify-content: center; gap: .5rem; border: 1px solid #e5e7eb; border-radius: .85rem; padding: .85rem .5rem; font-size: .8rem; font-weight: 600; color: #475569; background: #fff; cursor: pointer; transition: .15s; }
+.metodo:hover { border-color: #a7f3d0; }
+.metodo.active { border-color: var(--primary); box-shadow: 0 0 0 1px var(--primary); background: #f0fdf7; color: #0f172a; }
+
+/* ---------- Flechas del calendario ---------- */
+.cal-nav { width: 30px; height: 30px; border: 1px solid #e5e7eb; border-radius: .5rem; color: #64748b; display: grid; place-items: center; background: #fff; cursor: pointer; transition: .15s; }
+.cal-nav:hover:not(:disabled) { border-color: var(--primary); color: var(--primary-dark); }
+.cal-nav:disabled { opacity: .4; cursor: not-allowed; }
+
+
+

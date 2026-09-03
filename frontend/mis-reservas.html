@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CourtHub — Mis Reservas</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%2310b981'/%3E%3Crect x='4.5' y='6.5' width='15' height='11' rx='2' fill='none' stroke='white' stroke-width='1.8'/%3E%3Cline x1='12' y1='6.5' x2='12' y2='17.5' stroke='white' stroke-width='1.8'/%3E%3C/svg%3E">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: {
+      colors: { primary: {50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b'} },
+      fontFamily: { display: ['Poppins','ui-sans-serif','system-ui','sans-serif'], sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] }
+    } } };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/icons.js"></script>
+  <script>if (!localStorage.getItem('ch_user')) location.replace('index.html');</script>
+</head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <div id="ch-header"></div>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10 pt-8">
+    <h1 class="font-display text-3xl font-bold text-slate-900">Mis Reservas</h1>
+    <p class="text-sm text-gray-500 mt-1.5">Gestiona tus reservas y consulta tu historial.</p>
+
+    <div id="tabs" class="flex flex-wrap gap-2 mt-6"></div>
+    <div id="lista" class="space-y-4 mt-6"></div>
+
+    <section id="vacio" class="hidden text-center py-24">
+      <span class="inline-grid place-items-center w-16 h-16 rounded-full bg-primary-50 text-primary-500 mb-4" data-icon="calendar" data-cls="w-7 h-7"></span>
+      <h2 class="font-display font-semibold text-lg text-slate-800">No hay reservas en esta categoría</h2>
+      <p class="text-sm text-gray-500 mt-1">Explora las canchas disponibles y agenda tu próximo partido.</p>
+      <a href="dashboard.html" class="btn-primary mt-6">Ver Canchas <span data-icon="arrowRight" data-cls="w-4 h-4"></span></a>
+    </section>
+  </main>
+
+  <div id="ch-footer"></div>
+
+  <!-- ============ Modal: Reprogramar ============ -->
+  <div id="modal-repro" class="ch-modal">
+    <div class="box">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="font-display font-bold text-lg text-slate-900">Reprogramar reserva</h3>
+          <p id="repro-sub" class="text-xs text-gray-400 mt-0.5"></p>
+        </div>
+        <button type="button" data-close class="text-gray-400 hover:text-slate-600 p-1" aria-label="Cerrar"><span data-icon="x" data-cls="w-5 h-5"></span></button>
+      </div>
+      <div class="space-y-4 mt-5">
+        <div>
+          <label class="ch-label" for="repro-fecha">Nueva fecha</label>
+          <input id="repro-fecha" type="date" class="ch-input ch-input-plain" min="">
+        </div>
+        <div>
+          <label class="ch-label" for="repro-hora">Nuevo bloque horario</label>
+          <select id="repro-hora" class="ch-select !w-full !py-3"></select>
+        </div>
+        <p id="repro-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-100 rounded-lg px-3.5 py-2.5"></p>
+        <div class="flex gap-3 pt-1">
+          <button type="button" data-close class="btn-outline flex-1 !py-2.5">Cancelar</button>
+          <button id="repro-guardar" type="button" class="btn-primary flex-1 !py-2.5">Guardar cambios</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ Modal: Detalles ============ -->
+  <div id="modal-detalle" class="ch-modal">
+    <div class="box">
+      <div class="flex items-start justify-between">
+        <h3 class="font-display font-bold text-lg text-slate-900">Detalle de la reserva</h3>
+        <button type="button" data-close class="text-gray-400 hover:text-slate-600 p-1" aria-label="Cerrar"><span data-icon="x" data-cls="w-5 h-5"></span></button>
+      </div>
+      <div id="detalle-body" class="mt-4 text-sm space-y-3"></div>
+      <button type="button" data-close class="btn-outline w-full mt-5 !py-2.5">Cerrar</button>
+    </div>
+  </div>
+  <script src="js/data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    (function () {
+      CH.requireAuth();
+      CH.renderHeader('reservas');
+      CH.renderFooter();
+      CH.hydrateIcons();
+      CH.wireModals();
+
+      var reservas = [];
+      var tab = 'proximas'; // todas | proximas | pasadas | canceladas
+      var hoy = CH.hoyISO();
+
+      function clasificar(r) {
+        if (r.estado === 'cancelada') return 'canceladas';
+        if (r.estado === 'completada' || r.fecha < hoy) return 'pasadas';
+        return 'proximas';
+      }
+
+      /* ---------- Tabs con conteos ---------- */
+      function renderTabs() {
+        var conteos = { todas: reservas.length, proximas: 0, pasadas: 0, canceladas: 0 };
+        reservas.forEach(function (r) { conteos[clasificar(r)]++; });
+        var defs = [
+          { id: 'todas', label: 'Todas' },
+          { id: 'proximas', label: 'Próximas' },
+          { id: 'pasadas', label: 'Pasadas' },
+          { id: 'canceladas', label: 'Canceladas' }
+        ];
+        document.getElementById('tabs').innerHTML = defs.map(function (d) {
+          var n = d.id === 'todas' ? '' : ' (' + conteos[d.id] + ')';
+          return '<button type="button" class="pill' + (tab === d.id ? ' active' : '') + '" data-tab="' + d.id + '">' + d.label + n + '</button>';
+        }).join('');
+        document.querySelectorAll('#tabs .pill').forEach(function (b) {
+          b.addEventListener('click', function () { tab = b.dataset.tab; renderTabs(); renderLista(); });
+        });
+      }
+
+      /* ---------- Fila de reserva ---------- */
+      function filaHTML(r) {
+        var proxima = clasificar(r) === 'proximas';
+        var acciones = proxima
+          ? '<button type="button" class="btn-outline" data-accion="reprogramar" data-id="' + r.id + '">Reprogramar</button>' +
+            '<button type="button" class="btn-danger" data-accion="cancelar" data-id="' + r.id + '">Cancelar</button>'
+          : '<button type="button" class="btn-outline" data-accion="detalle" data-id="' + r.id + '">Ver Detalles</button>';
+        return '<article class="fade-up bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(16,24,40,.05)] p-5 flex flex-col md:flex-row md:items-center gap-4">' +
+          '<div class="flex items-center gap-4 flex-1 min-w-0">' +
+            '<span class="w-11 h-11 rounded-full bg-gray-100 text-gray-400 grid place-items-center shrink-0">' + CH.icon('xCircle', 'w-5 h-5') + '</span>' +
+            '<div class="min-w-0">' +
+              '<div class="flex items-center gap-2 flex-wrap">' +
+                '<h3 class="font-display font-semibold text-slate-900">' + (r.cancha ? r.cancha.nombre : 'Cancha') + '</h3>' +
+                (r.cancha ? CH.sportTag(r.cancha.tipo) : '') +
+              '</div>' +
+              '<p class="text-sm text-gray-500 mt-0.5 flex items-center gap-1.5">' + CH.icon('calendar', 'w-3.5 h-3.5 text-gray-400') +
+                CH.fmtFecha(r.fecha, { weekday: 'long', day: 'numeric', month: 'short', year: 'numeric' }) + ', ' + r.horaInicio + ' - ' + r.horaFin +
+              '</p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="flex items-center gap-4 sm:gap-7 flex-wrap md:flex-nowrap">' +
+            '<div class="text-right"><p class="ch-label-tiny">Total pagado</p><p class="font-display font-bold text-slate-900">' + CH.fmtPEN(r.total) + '</p></div>' +
+            CH.estadoBadge(r.estado) +
+            '<div class="flex gap-2 ml-auto md:ml-0">' + acciones + '</div>' +
+          '</div>' +
+        '</article>';
+      }
+
+      function renderLista() {
+        var lista = reservas.filter(function (r) { return tab === 'todas' || clasificar(r) === tab; });
+        // próximas primero (más cercana), luego pasadas (más reciente)
+        lista.sort(function (a, b) { return tab === 'pasadas' || tab === 'canceladas' ? (a.fecha < b.fecha ? 1 : -1) : (a.fecha > b.fecha ? 1 : -1); });
+        document.getElementById('lista').innerHTML = lista.map(filaHTML).join('');
+        document.getElementById('vacio').classList.toggle('hidden', lista.length > 0);
+        wireAcciones();
+      }
+      /* ---------- Acciones ---------- */
+      function porId(id) { return reservas.find(function (r) { return String(r.id) === String(id); }); }
+
+      function wireAcciones() {
+        document.querySelectorAll('[data-accion]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var r = porId(btn.dataset.id);
+            if (!r) return;
+            if (btn.dataset.accion === 'cancelar') cancelar(r);
+            if (btn.dataset.accion === 'reprogramar') abrirReprogramar(r);
+            if (btn.dataset.accion === 'detalle') verDetalle(r);
+          });
+        });
+      }
+
+      function cancelar(r) {
+        if (!confirm('¿Cancelar tu reserva en ' + (r.cancha ? r.cancha.nombre : 'la cancha') + ' del ' + CH.fmtFecha(r.fecha) + '?')) return;
+        CH.api.patch('/reservas/' + r.id + '/cancelar').then(function () {
+          CH.toast('Reserva cancelada. El reembolso llegará en créditos CourtHub.', 'info');
+          cargar();
+        }).catch(function (err) { CH.toast(err.message, 'error'); });
+      }
+
+      /* ---------- Reprogramar ---------- */
+      var reservaActual = null;
+      function abrirReprogramar(r) {
+        reservaActual = r;
+        document.getElementById('repro-sub').textContent = (r.cancha ? r.cancha.nombre : '') + ' · ' + CH.fmtFecha(r.fecha) + ', ' + r.horaInicio;
+        var f = document.getElementById('repro-fecha');
+        f.min = hoy; f.value = r.fecha >= hoy ? r.fecha : hoy;
+        var sel = document.getElementById('repro-hora');
+        sel.innerHTML = CH.api.bloques.map(function (h) {
+          return '<option value="' + h + '"' + (h === r.horaInicio ? ' selected' : '') + '>' + h + ' — ' + suma90(h) + '</option>';
+        }).join('');
+        document.getElementById('repro-error').classList.add('hidden');
+        CH.openModal('modal-repro');
+      }
+
+      function suma90(hhmm) {
+        var p = hhmm.split(':');
+        var t = (+p[0]) * 60 + (+p[1]) + 90;
+        var h = Math.floor(t / 60), m = t % 60;
+        return (h < 10 ? '0' : '') + h + ':' + (m < 10 ? '0' : '') + m;
+      }
+
+      document.getElementById('repro-guardar').addEventListener('click', function () {
+        var err = document.getElementById('repro-error');
+        err.classList.add('hidden');
+        var fecha = document.getElementById('repro-fecha').value;
+        var hora = document.getElementById('repro-hora').value;
+        if (!fecha || fecha < hoy) { err.textContent = 'Selecciona una fecha válida (hoy o futura).'; err.classList.remove('hidden'); return; }
+        CH.api.patch('/reservas/' + reservaActual.id + '/reprogramar', { fecha: fecha, hora_inicio: hora, hora_fin: suma90(hora) })
+          .then(function () { CH.closeModal('modal-repro'); CH.toast('¡Reserva reprogramada con éxito!', 'success'); cargar(); })
+          .catch(function (e) { err.textContent = e.message; err.classList.remove('hidden'); });
+      });
+
+      /* ---------- Detalles ---------- */
+      function verDetalle(r) {
+        var filas = [
+          ['Cancha', r.cancha ? r.cancha.nombre : '—'],
+          ['Código', r.codigo || '—'],
+          ['Fecha', CH.fmtFecha(r.fecha, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })],
+          ['Horario', r.horaInicio + ' - ' + r.horaFin + ' hrs'],
+          ['Estado', CH.estadoBadge(r.estado)],
+          ['Método de pago', r.metodoPago || '—'],
+          ['Total pagado', CH.fmtPEN(r.total)]
+        ];
+        document.getElementById('detalle-body').innerHTML = filas.map(function (f) {
+          return '<div class="flex justify-between gap-3 items-center"><span class="text-gray-500 shrink-0">' + f[0] + '</span><span class="font-semibold text-slate-800 text-right">' + f[1] + '</span></div>';
+        }).join('');
+        CH.openModal('modal-detalle');
+      }
+
+      /* ---------- Carga ---------- */
+      function cargar() {
+        CH.api.get('/reservas').then(function (res) {
+          reservas = (res.reservas || []).map(CH.api.normalizarReserva);
+          renderTabs();
+          renderLista();
+        }).catch(function (err) { CH.toast(err.message, 'error'); });
+      }
+
+      // Toast de confirmación al llegar desde el pago
+      if (new URLSearchParams(location.search).get('ok')) {
+        CH.toast('¡Reserva confirmada con éxito! Te esperamos en la cancha.', 'success');
+        history.replaceState(null, '', 'mis-reservas.html');
+      }
+
+      cargar();
+    })();
+  </script>
+</body>
+</html>
+

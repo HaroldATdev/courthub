@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CourtHub — Pago y Confirmación</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%2310b981'/%3E%3Crect x='4.5' y='6.5' width='15' height='11' rx='2' fill='none' stroke='white' stroke-width='1.8'/%3E%3Cline x1='12' y1='6.5' x2='12' y2='17.5' stroke='white' stroke-width='1.8'/%3E%3C/svg%3E">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: {
+      colors: { primary: {50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b'} },
+      fontFamily: { display: ['Poppins','ui-sans-serif','system-ui','sans-serif'], sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] }
+    } } };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/icons.js"></script>
+  <script>if (!localStorage.getItem('ch_user')) location.replace('index.html');</script>
+</head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <div id="ch-header"></div>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10">
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-sm pt-5 flex-wrap">
+      <a href="dashboard.html" class="flex items-center gap-1.5 text-primary-600 font-semibold hover:text-primary-700 transition">
+        <span data-icon="arrowLeft" data-cls="w-4 h-4"></span>Volver a Canchas
+      </a>
+      <span class="text-gray-300">/</span>
+      <span class="text-gray-500">Pago y Confirmación</span>
+    </div>
+
+    <div class="grid lg:grid-cols-5 gap-6 mt-5 items-start">
+      <!-- ============ Datos de pago ============ -->
+      <section class="lg:col-span-3 card p-6 sm:p-8">
+        <h1 class="font-display text-xl sm:text-2xl font-bold text-slate-900">Datos de Pago</h1>
+        <p class="text-sm text-gray-500 mt-1">Completa tu información de facturación de manera segura.</p>
+
+        <p class="ch-label mt-7">Método de Pago</p>
+        <div id="metodos" class="grid grid-cols-3 gap-3">
+          <button type="button" class="metodo active" data-metodo="Tarjeta de Crédito">
+            <span data-icon="card" data-cls="w-[18px] h-[18px] text-primary-600"></span><span class="hidden sm:inline">Tarjeta de Crédito</span>
+          </button>
+          <button type="button" class="metodo" data-metodo="PayPal">
+            <span data-icon="wallet" data-cls="w-[18px] h-[18px] text-blue-500"></span><span class="hidden sm:inline">PayPal</span>
+          </button>
+          <button type="button" class="metodo" data-metodo="Webpay">
+            <span data-icon="shieldCheck" data-cls="w-[18px] h-[18px] text-sky-600"></span><span class="hidden sm:inline">Webpay</span>
+          </button>
+        </div>
+
+        <div id="campos-tarjeta" class="space-y-5 mt-6">
+          <div>
+            <label class="ch-label" for="t-nombre">Nombre en la Tarjeta</label>
+            <div class="input-wrap">
+              <span data-icon="user" data-cls="w-[18px] h-[18px]"></span>
+              <input id="t-nombre" type="text" class="ch-input" placeholder="Gustavo Diaz" autocomplete="cc-name">
+            </div>
+          </div>
+          <div>
+            <label class="ch-label" for="t-numero">Número de Tarjeta</label>
+            <div class="input-wrap">
+              <span data-icon="card" data-cls="w-[18px] h-[18px]"></span>
+              <input id="t-numero" type="text" inputmode="numeric" class="ch-input" placeholder="•••• •••• •••• 4242" maxlength="19" autocomplete="cc-number">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="ch-label" for="t-venc">Fecha de Vencimiento</label>
+              <div class="input-wrap">
+                <span data-icon="calendar" data-cls="w-[18px] h-[18px]"></span>
+                <input id="t-venc" type="text" inputmode="numeric" class="ch-input" placeholder="MM / AA" maxlength="7" autocomplete="cc-exp">
+              </div>
+            </div>
+            <div>
+              <label class="ch-label" for="t-cvv">CVV</label>
+              <div class="input-wrap">
+                <span data-icon="lock" data-cls="w-[18px] h-[18px]"></span>
+                <input id="t-cvv" type="password" inputmode="numeric" class="ch-input" placeholder="•••" maxlength="4" autocomplete="cc-csc">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <label class="flex items-start gap-2.5 text-sm text-slate-600 mt-6 cursor-pointer select-none">
+          <input id="t-term" type="checkbox" class="mt-0.5 w-4 h-4 rounded border-gray-300 accent-primary-500 shrink-0">
+          <span>Acepto los <a href="#" class="text-primary-600 font-medium underline underline-offset-2">términos, condiciones</a> y políticas de cancelación de CourtHub.</span>
+        </label>
+
+        <p id="pago-error" class="hidden text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mt-5"></p>
+        <button id="btn-pagar" class="btn-primary w-full mt-6 !py-3.5" type="button">Confirmar Reserva</button>
+      </section>
+      <!-- ============ Resumen de reserva ============ -->
+      <aside class="lg:col-span-2 space-y-5">
+        <section class="card p-6 sm:p-7">
+          <h2 class="font-display text-lg font-bold text-slate-900">Resumen de Reserva</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Verifica los detalles antes de pagar.</p>
+
+          <div class="flex gap-3.5 mt-5 pb-5 border-b border-gray-100">
+            <img id="s-img" class="w-16 h-16 rounded-xl object-cover bg-primary-100" alt="Cancha">
+            <div class="min-w-0">
+              <span id="s-tipo" class="text-[10px] font-bold tracking-wider text-primary-600 bg-primary-50 px-2 py-0.5 rounded">FÚTBOL</span>
+              <p id="s-nombre" class="font-semibold text-sm text-slate-800 mt-1 leading-snug"></p>
+              <p id="s-sub" class="text-xs text-gray-400 mt-0.5"></p>
+            </div>
+          </div>
+
+          <dl class="text-sm space-y-3 py-5 border-b border-gray-100">
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Fecha</dt><dd id="s-fecha" class="font-semibold text-right text-slate-800"></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Horario</dt><dd id="s-horario" class="font-semibold text-slate-800"></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Duración</dt><dd class="font-semibold text-slate-800">1.5 horas</dd></div>
+          </dl>
+
+          <dl class="text-sm space-y-2.5 pt-5">
+            <div class="flex justify-between"><dt class="text-gray-500">Subtotal de la Cancha</dt><dd id="s-subtotal" class="font-medium text-slate-700"></dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500">Cargo por servicio CourtHub</dt><dd id="s-cargo" class="font-medium text-slate-700"></dd></div>
+          </dl>
+          <div class="flex items-center justify-between pt-4 mt-3 border-t border-gray-100">
+            <span class="font-display font-bold text-slate-900">Total</span>
+            <span id="s-total" class="font-display text-2xl font-bold text-slate-900"></span>
+          </div>
+        </section>
+
+        <section class="bg-primary-50/60 border border-primary-100 rounded-2xl p-5">
+          <p class="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <span class="text-primary-500" data-icon="shieldCheck" data-cls="w-[18px] h-[18px]"></span>Pago 100% Protegido y Encriptado
+          </p>
+          <p class="text-xs text-gray-500 mt-2 leading-relaxed">Tus transacciones están respaldadas por estándares internacionales de seguridad SSL y protocolos de autenticación avanzada.</p>
+        </section>
+      </aside>
+    </div>
+  </main>
+
+  <div id="ch-footer"></div>
+  <script src="js/data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    (function () {
+      CH.requireAuth();
+      CH.renderHeader('canchas');
+      CH.renderFooter();
+      CH.hydrateIcons();
+
+      var draft;
+      try { draft = JSON.parse(sessionStorage.getItem('ch_draft')); } catch (e) { draft = null; }
+      if (!draft || !draft.canchaId) location.replace('dashboard.html');
+
+      var metodo = 'Tarjeta de Crédito';
+      var subtotal = Number(draft.precio) || 0;
+      var cargo = Math.round(subtotal * 0.10 * 100) / 100; // 10% con precisión de centavos
+      var total = subtotal + cargo;
+
+      /* ---------- Resumen ---------- */
+      CH.api.get('/canchas/' + draft.canchaId).then(function (res) {
+        var c = res.cancha;
+        var img = document.getElementById('s-img');
+        img.src = c.imagen;
+        img.onerror = function () { CH.imgFallback(img, 'cancha' + c.id); };
+        document.getElementById('s-tipo').textContent = (CH.Mock.DEPORTES[c.tipo] || c.tipo).toUpperCase();
+        document.getElementById('s-nombre').textContent = c.nombre;
+        document.getElementById('s-sub').textContent = c.subtipo || 'Cancha principal';
+      });
+      document.getElementById('s-fecha').textContent = CH.fmtFecha(draft.fecha, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+      document.getElementById('s-horario').textContent = draft.horaInicio + ' - ' + draft.horaFin;
+      document.getElementById('s-subtotal').textContent = CH.fmtPEN(subtotal);
+      document.getElementById('s-cargo').textContent = CH.fmtPEN(cargo);
+      document.getElementById('s-total').textContent = CH.fmtPEN(total);
+
+      /* ---------- Métodos de pago ---------- */
+      document.querySelectorAll('#metodos .metodo').forEach(function (b) {
+        b.addEventListener('click', function () {
+          document.querySelectorAll('#metodos .metodo').forEach(function (x) { x.classList.remove('active'); });
+          b.classList.add('active');
+          metodo = b.dataset.metodo;
+          document.getElementById('campos-tarjeta').classList.toggle('hidden', metodo !== 'Tarjeta de Crédito');
+        });
+      });
+
+      /* ---------- Formato automático de tarjeta ---------- */
+      var inNumero = document.getElementById('t-numero');
+      inNumero.addEventListener('input', function () {
+        var d = this.value.replace(/\D/g, '').slice(0, 16);
+        this.value = d.replace(/(.{4})/g, '$1 ').trim();
+      });
+      var inVenc = document.getElementById('t-venc');
+      inVenc.addEventListener('input', function () {
+        var d = this.value.replace(/\D/g, '').slice(0, 4);
+        this.value = d.length > 2 ? d.slice(0, 2) + ' / ' + d.slice(2) : d;
+      });
+      document.getElementById('t-cvv').addEventListener('input', function () {
+        this.value = this.value.replace(/\D/g, '').slice(0, 4);
+      });
+
+      function showError(msg) {
+        var el = document.getElementById('pago-error');
+        el.textContent = msg;
+        el.classList.remove('hidden');
+      }
+
+      /* ---------- Confirmar reserva ---------- */
+      document.getElementById('btn-pagar').addEventListener('click', function () {
+        var btn = this;
+        document.getElementById('pago-error').classList.add('hidden');
+        if (!document.getElementById('t-term').checked) return showError('Debes aceptar los términos y condiciones para continuar.');
+        if (metodo === 'Tarjeta de Crédito') {
+          var nombre = document.getElementById('t-nombre').value.trim();
+          var numero = inNumero.value.replace(/\D/g, '');
+          var venc = inVenc.value.replace(/\D/g, '');
+          var cvv = document.getElementById('t-cvv').value;
+          if (!nombre) return showError('Ingresa el nombre que aparece en la tarjeta.');
+          if (numero.length !== 16) return showError('El número de tarjeta debe tener 16 dígitos.');
+          if (venc.length !== 4 || +venc.slice(0, 2) < 1 || +venc.slice(0, 2) > 12) return showError('Ingresa una fecha de vencimiento válida (MM / AA).');
+          if (cvv.length < 3) return showError('El CVV debe tener 3 o 4 dígitos.');
+        }
+        btn.disabled = true; btn.textContent = 'Procesando pago...';
+        CH.api.post('/reservas', {
+          cancha_id: draft.canchaId, fecha: draft.fecha, hora_inicio: draft.horaInicio,
+          hora_fin: draft.horaFin, metodo_pago: metodo
+        }).then(function () {
+          sessionStorage.removeItem('ch_draft');
+          btn.textContent = '¡Reserva Confirmada!';
+          CH.toast('Pago aprobado por ' + CH.fmtPEN(total) + '. Redirigiendo...', 'success');
+          setTimeout(function () { location.href = 'mis-reservas.html?ok=1'; }, 1100);
+        }).catch(function (err) {
+          btn.disabled = false; btn.textContent = 'Confirmar Reserva';
+          showError(err.message);
+          if (err.status === 409) setTimeout(function () { location.href = 'cancha-detalle.html?id=' + draft.canchaId; }, 1600);
+        });
+      });
+    })();
+  </script>
+</body>
+</html>
+
+

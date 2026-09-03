@@ -1,0 +1,63 @@
+# ============================================================
+# CourtHub · docker-compose.yml
+# Levanta Base de Datos (PostgreSQL) + Backend (Node/Express)
+# + Frontend (Nginx) interconectados, con volumen persistente.
+#
+#   Uso:  docker compose up --build
+#   Web:  http://localhost:8080   ·   API: http://localhost:3000/api/health
+# ============================================================
+services:
+
+  # ---------------- Base de datos ----------------
+  db:
+    image: postgres:16-alpine
+    container_name: courthub-db
+    environment:
+      POSTGRES_USER: courthub
+      POSTGRES_PASSWORD: courthub
+      POSTGRES_DB: courthub
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      # Scripts automáticos de inicialización (solo la primera vez)
+      - ./database/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./database/02-seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
+    ports:
+      - "5433:5432"   # acceso opcional desde el host (pgAdmin, DBeaver…)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U courthub -d courthub"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  # ---------------- Backend (API REST) ----------------
+  backend:
+    build: ./backend
+    container_name: courthub-api
+    environment:
+      PORT: 3000
+      PGHOST: db
+      PGPORT: 5432
+      PGUSER: courthub
+      PGPASSWORD: courthub
+      PGDATABASE: courthub
+      JWT_SECRET: cambia-esta-clave-en-produccion
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ---------------- Frontend (Nginx) ----------------
+  frontend:
+    build: ./frontend
+    container_name: courthub-web
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
+
+volumes:
+  pgdata:   # datos persistentes de PostgreSQL

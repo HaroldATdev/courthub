@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CourtHub — Clases Deportivas</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%2310b981'/%3E%3Crect x='4.5' y='6.5' width='15' height='11' rx='2' fill='none' stroke='white' stroke-width='1.8'/%3E%3Cline x1='12' y1='6.5' x2='12' y2='17.5' stroke='white' stroke-width='1.8'/%3E%3C/svg%3E">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { theme: { extend: {
+      colors: { primary: {50:'#ecfdf5',100:'#d1fae5',200:'#a7f3d0',300:'#6ee7b7',400:'#34d399',500:'#10b981',600:'#059669',700:'#047857',800:'#065f46',900:'#064e3b'} },
+      fontFamily: { display: ['Poppins','ui-sans-serif','system-ui','sans-serif'], sans: ['Inter','ui-sans-serif','system-ui','sans-serif'] }
+    } } };
+  </script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/icons.js"></script>
+  <script>if (!localStorage.getItem('ch_user')) location.replace('index.html');</script>
+</head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <div id="ch-header"></div>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10 pt-8">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h1 class="font-display text-3xl font-bold text-slate-900">Clases Deportivas</h1>
+        <p class="text-sm text-gray-500 mt-1.5">Entrena con los mejores profesionales de CourtHub y mejora tu juego.</p>
+      </div>
+      <p id="resumen" class="text-sm text-gray-500"></p>
+    </div>
+
+    <div id="pills" class="flex flex-wrap gap-2 mt-6"></div>
+    <div id="grid" class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-7"></div>
+
+    <section id="vacio" class="hidden text-center py-24">
+      <span class="inline-grid place-items-center w-16 h-16 rounded-full bg-primary-50 text-primary-500 mb-4" data-icon="activity" data-cls="w-7 h-7"></span>
+      <h2 class="font-display font-semibold text-lg text-slate-800">No hay clases en este deporte</h2>
+      <p class="text-sm text-gray-500 mt-1">Prueba con otro deporte o vuelve más tarde.</p>
+    </section>
+  </main>
+
+  <div id="ch-footer"></div>
+  <script src="js/data.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    (function () {
+      CH.requireAuth();
+      CH.renderHeader('clases');
+      CH.renderFooter();
+      CH.hydrateIcons();
+
+      var deporte = 'todos';
+
+      function inicialesCoach(nombre) {
+        var p = String(nombre || 'C').trim().split(/\s+/);
+        return ((p[0] || 'C').charAt(0) + (p[1] || '').charAt(0)).toUpperCase();
+      }
+
+      function claseCard(k) {
+        var libres = Math.max(0, k.cupoMax - k.inscritos);
+        var pct = Math.min(100, Math.round((k.inscritos / k.cupoMax) * 100));
+        var btn;
+        if (k.inscrito) {
+          btn = '<button type="button" class="btn-outline !text-primary-600 !border-primary-300 !bg-primary-50" data-accion="salir" data-id="' + k.id + '">' + CH.icon('check', 'w-4 h-4') + 'Inscrito — Salir</button>';
+        } else if (libres <= 0) {
+          btn = '<button type="button" class="btn-outline opacity-50 cursor-not-allowed" disabled>Cupo lleno</button>';
+        } else {
+          btn = '<button type="button" class="btn-primary !px-4 !py-2 !text-[13px]" data-accion="unirse" data-id="' + k.id + '">Apuntarme ' + CH.icon('arrowRight', 'w-4 h-4') + '</button>';
+        }
+        return '<article class="fade-up bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(16,24,40,.05)] p-5 flex flex-col gap-4">' +
+          '<div class="flex items-start justify-between gap-3">' +
+            '<div class="flex items-center gap-3 min-w-0">' +
+              '<span class="w-11 h-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center shrink-0">' + CH.icon('activity', 'w-5 h-5') + '</span>' +
+              '<div class="min-w-0"><h3 class="font-display font-semibold text-slate-900 leading-snug">' + k.nombre + '</h3>' +
+              '<p class="text-xs text-gray-400 mt-0.5">' + (CH.Mock.DEPORTES[k.deporte] || k.deporte) + ' · ' + (k.nivel || 'Todos los niveles') + '</p></div>' +
+            '</div>' +
+            '<span class="w-9 h-9 rounded-full bg-slate-100 text-slate-600 grid place-items-center text-[10px] font-bold shrink-0" title="Entrenador">' + inicialesCoach(k.entrenador && k.entrenador.nombre) + '</span>' +
+          '</div>' +
+          '<div class="grid grid-cols-1 gap-2 text-sm text-gray-600">' +
+            '<span class="flex items-center gap-2">' + CH.icon('user', 'w-4 h-4 text-gray-400') + 'Coach: <b class="font-semibold">' + (k.entrenador ? k.entrenador.nombre : '—') + '</b></span>' +
+            '<span class="flex items-center gap-2">' + CH.icon('calendar', 'w-4 h-4 text-gray-400') + CH.fmtFecha(k.fecha, { weekday: 'long', day: 'numeric', month: 'long' }) + '</span>' +
+            '<span class="flex items-center gap-2">' + CH.icon('clock', 'w-4 h-4 text-gray-400') + k.horaInicio + ' - ' + k.horaFin + ' hrs</span>' +
+            '<span class="flex items-center gap-2">' + CH.icon('pin', 'w-4 h-4 text-gray-400') + (k.cancha ? k.cancha.nombre : '—') + '</span>' +
+          '</div>' +
+          '<div>' +
+            '<div class="flex justify-between text-xs mb-1.5"><span class="text-gray-500">Cupos disponibles</span><span class="font-semibold text-slate-700">' + libres + ' de ' + k.cupoMax + '</span></div>' +
+            '<div class="h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary-500 rounded-full transition-all" style="width:' + pct + '%"></div></div>' +
+          '</div>' +
+          '<div class="flex items-center justify-between pt-3.5 border-t border-gray-100">' +
+            '<p class="font-display font-bold text-slate-900">' + CH.fmtPEN(k.precio) + '<span class="text-xs text-gray-400 font-sans font-normal"> /clase</span></p>' + btn +
+          '</div>' +
+        '</article>';
+      }
+
+      function renderPills(clases) {
+        var deportes = ['todos'].concat(Object.keys(CH.Mock.DEPORTES).filter(function (d) { return d !== 'todos'; }));
+        document.getElementById('pills').innerHTML = deportes.map(function (d) {
+          return '<button type="button" class="pill' + (deporte === d ? ' active' : '') + '" data-deporte="' + d + '">' + CH.Mock.DEPORTES[d] + '</button>';
+        }).join('');
+        document.querySelectorAll('#pills .pill').forEach(function (b) {
+          b.addEventListener('click', function () { deporte = b.dataset.deporte; cargar(); });
+        });
+      }
+
+      function wireAcciones() {
+        document.querySelectorAll('[data-accion]').forEach(function (btn) {
+          btn.addEventListener('click', function () {
+            var id = btn.dataset.id;
+            var p = btn.dataset.accion === 'unirse'
+              ? CH.api.post('/clases/' + id + '/inscribirse')
+              : CH.api.del('/clases/' + id + '/inscribirse');
+            btn.disabled = true;
+            p.then(function (r) { CH.toast(r.mensaje || 'Listo.', 'success'); cargar(); })
+              .catch(function (e) { CH.toast(e.message, 'error'); btn.disabled = false; });
+          });
+        });
+      }
+
+      function cargar() {
+        var qs = deporte !== 'todos' ? '?deporte=' + deporte : '';
+        CH.api.get('/clases' + qs).then(function (res) {
+          var clases = res.clases || [];
+          document.getElementById('grid').innerHTML = clases.map(claseCard).join('');
+          document.getElementById('resumen').textContent = clases.length + ' clase' + (clases.length === 1 ? '' : 's') + ' disponibles esta semana';
+          document.getElementById('vacio').classList.toggle('hidden', clases.length > 0);
+          wireAcciones();
+          if (!document.getElementById('pills').children.length) renderPills(clases);
+        }).catch(function (err) { CH.toast(err.message, 'error'); });
+      }
+
+      cargar();
+    })();
+  </script>
+</body>
+</html>
+
