@@ -1,15 +1,26 @@
-# Dependencias
-node_modules/
-
 # Entorno
 .env
 backend/.env
+
+# Java / Maven
+backend/target/
+*.class
+*.jar
+!.mvn/wrapper/maven-wrapper.jar
+backend/.mvn/wrapper/maven-wrapper.jar
+
+# Node (legado)
+node_modules/
 
 # Sistema / editores
 .DS_Store
 Thumbs.db
 .vscode/
 .idea/
+*.iml
+.settings/
+.project
+.classpath
 
 # Logs
 npm-debug.log*

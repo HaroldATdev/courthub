@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!-- Vista ERP: Usuarios y roles · Controlador: AdminViewController#usuarios / #estadoUsuario / #exportarUsuarios -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Admin · Usuarios')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('admin')}"></header>
+
+  <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-6">
+    <div th:replace="~{admin/_layout :: cabecera('Usuarios y roles', 'Clientes, entrenadores y administradores del sistema.')}"></div>
+
+    <div class="grid lg:grid-cols-[220px_1fr] gap-6 mt-6 items-start">
+      <nav th:replace="~{admin/_layout :: sidebar}"></nav>
+
+      <section class="min-w-0 space-y-5">
+        <form th:action="@{/admin/usuarios}" method="get" class="card p-4 flex flex-wrap items-end gap-3">
+          <div><p class="ch-label-tiny mb-1.5">Rol</p>
+            <select name="rol" class="ch-select">
+              <option value="">Todos</option>
+              <option value="cliente" th:selected="${rol == 'cliente'}">Cliente</option>
+              <option value="entrenador" th:selected="${rol == 'entrenador'}">Entrenador</option>
+              <option value="administrador" th:selected="${rol == 'administrador'}">Administrador</option>
+            </select></div>
+          <div class="flex-1 min-w-[180px]"><p class="ch-label-tiny mb-1.5">Buscar</p><input name="q" type="text" class="ch-select !w-full" placeholder="Nombre o correo" th:value="${q}"></div>
+          <button type="submit" class="btn-primary !py-2 !px-4 !text-[13px]">Filtrar</button>
+          <a th:href="@{/admin/usuarios/nuevo}" class="btn-outline !py-2">+ Nuevo usuario</a>
+          <a th:href="@{/admin/usuarios/exportar(q=${q}, rol=${rol})}" class="btn-outline !py-2">Exportar CSV</a>
+        </form>
+        <p class="text-sm text-gray-500"><span th:text="${#lists.size(usuarios)}"></span> usuarios</p>
+
+        <div class="card overflow-hidden"><div class="overflow-x-auto"><table class="admin-table">
+          <thead><tr><th>Usuario</th><th>Rol</th><th>Teléfono</th><th>Nivel</th><th>Deporte</th><th>Registro</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>
+            <tr th:each="u : ${usuarios}" th:classappend="${!u.activo} ? 'opacity-60'" th:with="esYo=${u.id == usuario.id}">
+              <td><div class="flex items-center gap-3">
+                <span class="w-9 h-9 rounded-full bg-primary-100 text-primary-700 grid place-items-center text-xs font-bold shrink-0" th:text="${#strings.toUpperCase(#strings.substring(u.nombre, 0, 1) + (#strings.isEmpty(u.apellido) ? '' : #strings.substring(u.apellido, 0, 1)))}"></span>
+                <div><p class="font-semibold text-slate-800"><span th:text="${u.nombre} + ' ' + ${u.apellido}"></span> <span th:if="${esYo}" class="text-xs text-gray-400">(tú)</span></p><p class="text-xs text-gray-400" th:text="${u.email}"></p></div>
+              </div></td>
+              <td><span class="badge" th:classappend="${u.rol == 'administrador'} ? 'badge-completada' : (${u.rol == 'entrenador'} ? 'badge-pendiente' : 'badge-confirmada')" th:text="${#strings.capitalize(u.rol)}"></span></td>
+              <td class="text-xs" th:text="${#strings.isEmpty(u.telefono)} ? '—' : ${u.telefono}"></td>
+              <td th:text="${u.nivel}"></td>
+              <td th:text="${u.deporte}"></td>
+              <td class="text-xs" th:text="${@fmt.fechaHora(u.fechaRegistro)}"></td>
+              <td><span th:replace="~{admin/_layout :: activo(${u.activo}, 'Activo', 'Inactivo')}"></span></td>
+              <td><div class="flex gap-1.5">
+                <a th:href="@{/admin/usuarios/{id}/editar(id=${u.id})}" class="btn-outline !py-1 !px-2.5 !text-xs">Editar</a>
+                <form th:unless="${esYo}" th:action="@{/admin/usuarios/{id}/estado(id=${u.id})}" method="post"><button type="submit" class="!py-1 !px-2.5 !text-xs" th:classappend="${u.activo} ? 'btn-danger' : 'btn-outline'" th:text="${u.activo} ? 'Desactivar' : 'Activar'"></button></form>
+              </div></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(usuarios)}"><td colspan="8" class="text-center text-gray-400 py-10">No hay usuarios con esos filtros.</td></tr>
+          </tbody>
+        </table></div></div>
+      </section>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

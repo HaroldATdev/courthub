@@ -1,18 +1,26 @@
 # ============================================================
-# CourtHub · Dockerfile del Backend (Node.js + Express)
+# CourtHub · Dockerfile de la aplicación (Java 21 + Spring Boot MVC)
+# Build multi-etapa: Maven compila el JAR → imagen final solo con JRE
 # ============================================================
-FROM node:20-alpine
 
+# ---------- Etapa 1: compilación ----------
+FROM maven:3.9-eclipse-temurin-21 AS build
 WORKDIR /app
 
-# Instalar dependencias primero (mejor cacheo de capas)
-COPY package*.json ./
-RUN npm install --omit=dev --no-audit --no-fund
+# Descargar dependencias primero (mejor cacheo de capas)
+COPY pom.xml .
+RUN mvn -q -B dependency:go-offline
 
-# Código fuente
+# Compilar y empaquetar (sin tests para acelerar el build)
 COPY src ./src
+RUN mvn -q -B package -DskipTests
 
-ENV NODE_ENV=production
-EXPOSE 3000
+# ---------- Etapa 2: imagen de ejecución ----------
+FROM eclipse-temurin:21-jre
+WORKDIR /app
+COPY --from=build /app/target/courthub-api-*.jar app.jar
 
-CMD ["node", "src/server.js"]
+ENV TZ=America/Lima
+EXPOSE 8080
+
+ENTRYPOINT ["java", "-Dfile.encoding=UTF-8", "-jar", "app.jar"]

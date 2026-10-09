@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<!-- Vista: Detalle de cancha + calendario + bloques (prototipo 3) · Controlador: CanchaViewController#detalle
+     La disponibilidad por fecha se consulta a la API REST (GET /api/canchas/{id}/disponibilidad) -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${cancha.nombre})}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('canchas')}"></header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10">
+    <!-- Breadcrumb -->
+    <div class="flex items-center gap-2 text-sm pt-5 flex-wrap">
+      <a th:href="@{/dashboard}" class="flex items-center gap-1.5 text-primary-600 font-semibold hover:text-primary-700 transition">
+        <span data-icon="arrowLeft" data-cls="w-4 h-4"></span>Volver a Canchas
+      </a>
+      <span class="text-gray-300">/</span>
+      <span class="text-gray-500" th:text="${cancha.nombre}"></span>
+    </div>
+
+    <!-- Hero -->
+    <div class="relative h-64 sm:h-80 rounded-3xl overflow-hidden mt-4 bg-gradient-to-br from-primary-100 to-emerald-200">
+      <img th:src="${cancha.imagen}" th:data-fallback="'cancha' + ${cancha.id}" class="w-full h-full object-cover" alt="Imagen de la cancha">
+      <span class="absolute top-4 left-4 bg-slate-900/70 backdrop-blur-sm text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg" th:text="${#strings.isEmpty(cancha.subtipo)} ? ${@fmt.deporte(cancha.tipo)} : ${cancha.subtipo}"></span>
+      <span th:if="${cancha.verificada}" class="absolute top-4 right-4 flex items-center gap-1.5 bg-primary-500 text-white text-[11px] font-semibold px-3 py-1.5 rounded-lg shadow-lg">
+        <span data-icon="shieldCheck" data-cls="w-3.5 h-3.5"></span>Club Verificado
+      </span>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-6 mt-6">
+      <!-- ============ Columna izquierda ============ -->
+      <div class="lg:col-span-2 space-y-6">
+        <section class="card p-6 sm:p-7">
+          <h1 class="font-display text-2xl sm:text-3xl font-bold text-slate-900" th:text="${cancha.nombre}"></h1>
+          <p class="mt-2.5 flex items-center gap-1.5 text-sm text-gray-500">
+            <span class="text-gray-400" data-icon="pin" data-cls="w-4 h-4"></span><span th:text="${#strings.isEmpty(cancha.direccion)} ? ${cancha.comuna + ', Lima'} : ${cancha.direccion}"></span>
+          </p>
+          <div class="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2.5 text-sm">
+            <span class="flex items-center gap-1.5">
+              <span class="text-amber-400" data-icon="star" data-cls="w-4 h-4"></span>
+              <b class="text-slate-800" th:text="${@fmt.dec1(cancha.calificacion)}"></b>
+              <span class="text-gray-400" th:text="'(' + ${cancha.opiniones} + ' opiniones de jugadores)'"></span>
+            </span>
+            <span class="flex items-center gap-1.5 text-gray-600"><span class="text-primary-500" data-icon="leaf" data-cls="w-4 h-4"></span>Superficie premium</span>
+            <span class="flex items-center gap-1.5 text-gray-600"><span class="text-primary-500" data-icon="ruler" data-cls="w-4 h-4"></span>Medidas reglamentarias</span>
+          </div>
+        </section>
+        <section class="card p-6 sm:p-7">
+          <h2 class="font-display font-semibold text-lg text-slate-900">Sobre esta cancha</h2>
+          <p class="mt-3 text-sm text-gray-600 leading-relaxed" th:text="${cancha.descripcion}"></p>
+        </section>
+
+        <section class="card p-6 sm:p-7">
+          <h2 class="font-display font-semibold text-lg text-slate-900">Servicios y comodidades</h2>
+          <div class="mt-4 grid sm:grid-cols-2 gap-3">
+            <div th:each="s : ${cancha.servicios}" class="flex items-center gap-2.5 border border-gray-100 rounded-xl px-4 py-3 text-sm text-slate-600">
+              <span class="text-primary-500 shrink-0" th:data-icon="${#maps.containsKey(iconos, s)} ? ${iconos.get(s)} : 'checkCircle'" data-cls="w-[18px] h-[18px]"></span>
+              <span th:text="${s}"></span>
+            </div>
+          </div>
+        </section>
+
+        <section class="card p-6 sm:p-7">
+          <h2 class="font-display font-semibold text-lg text-slate-900">Reglamento del complejo</h2>
+          <ul class="mt-3.5 space-y-2.5 text-sm text-gray-600 list-disc list-outside pl-4 marker:text-primary-500">
+            <li th:each="r : ${cancha.reglamento}" th:text="${r}"></li>
+          </ul>
+        </section>
+      </div>
+
+      <!-- ============ Columna derecha: reserva ============ -->
+      <div class="space-y-6">
+        <section class="card p-6 lg:sticky lg:top-20" th:attr="data-cancha=${cancha.id}, data-hoy=${hoy}, data-precio=${cotizacion.subtotal}">
+          <h2 class="font-display font-semibold text-lg text-slate-900">Selecciona Fecha y Hora</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Bloques de 1.5 horas de juego</p>
+
+          <div class="mt-5 flex items-center justify-between">
+            <p id="cal-titulo" class="font-semibold text-sm text-slate-800"></p>
+            <div class="flex gap-1.5">
+              <button id="cal-prev" class="cal-nav" type="button" aria-label="Mes anterior"><span data-icon="chevronLeft" data-cls="w-4 h-4"></span></button>
+              <button id="cal-next" class="cal-nav" type="button" aria-label="Mes siguiente"><span data-icon="chevronRight" data-cls="w-4 h-4"></span></button>
+            </div>
+          </div>
+          <div id="cal-grid" class="grid grid-cols-7 gap-1 mt-3"></div>
+
+          <p class="ch-label-tiny mt-6 mb-2.5">Bloques horarios disponibles</p>
+          <div id="slots" class="grid grid-cols-3 gap-2"></div>
+          <p class="flex items-center gap-1.5 text-[11px] text-gray-400 mt-3"><span class="w-3 h-3 rounded bg-primary-600 inline-block"></span>Seleccionado</p>
+
+          <div class="mt-5 pt-4 border-t border-gray-100 text-sm space-y-2.5">
+            <div class="flex justify-between gap-3"><span class="text-gray-500 shrink-0">Fecha seleccionada:</span><b id="r-fecha" class="text-right text-slate-800"></b></div>
+            <div class="flex justify-between gap-3"><span class="text-gray-500 shrink-0">Bloque reservado:</span><b id="r-bloque" class="text-right text-slate-800"></b></div>
+          </div>
+          <div class="mt-4 flex items-baseline justify-between">
+            <span class="text-sm text-gray-500">Total a pagar:</span>
+            <p><b class="font-display text-2xl font-bold text-slate-900" th:text="${@fmt.pen(cotizacion.subtotal)}"></b> <span class="text-xs text-gray-400">/bloque</span></p>
+          </div>
+          <a id="btn-continuar" th:href="@{/pago}" class="btn-primary w-full mt-5 !py-3.5">Continuar con Reserva <span data-icon="arrowRight" data-cls="w-4 h-4"></span></a>
+        </section>
+
+        <section class="bg-primary-50/60 border border-primary-100 rounded-2xl p-5 flex gap-3">
+          <span class="text-primary-500 shrink-0 mt-0.5" data-icon="info" data-cls="w-5 h-5"></span>
+          <div>
+            <p class="text-sm font-semibold text-slate-800">¿Necesitas asistencia?</p>
+            <p class="text-xs text-gray-500 mt-1 leading-relaxed">Escríbenos directamente a través de nuestro sistema de ayuda en línea o contacta al administrador del club.</p>
+          </div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+  <script>
+    (function () {
+      var panel = document.querySelector('[data-cancha]');
+      var canchaId = panel.dataset.cancha, hoy = panel.dataset.hoy;
+      var sel = { fecha: hoy, bloque: null, fin: null };
+      var offset = 0;
+      function pad(n) { return (n < 10 ? '0' : '') + n; }
+      function isoDe(anio, mes, dia) { return anio + '-' + pad(mes + 1) + '-' + pad(dia); }
+
+      /* ---------- Calendario ---------- */
+      function renderCalendario() {
+        var base = new Date(hoy + 'T12:00:00');
+        var visto = new Date(base.getFullYear(), base.getMonth() + offset, 1);
+        document.getElementById('cal-titulo').textContent = CH.cap(visto.toLocaleDateString('es-PE', { month: 'long' })) + ' ' + visto.getFullYear();
+        var primerDia = (visto.getDay() + 6) % 7;
+        var totalDias = new Date(visto.getFullYear(), visto.getMonth() + 1, 0).getDate();
+        var html = ['LUN', 'MAR', 'MIÉ', 'JUE', 'VIE', 'SÁB', 'DOM'].map(function (d) { return '<span class="text-[10px] font-bold text-gray-400 text-center py-1">' + d + '</span>'; }).join('');
+        for (var i = 0; i < primerDia; i++) html += '<span></span>';
+        for (var d = 1; d <= totalDias; d++) {
+          var iso = isoDe(visto.getFullYear(), visto.getMonth(), d);
+          var cls = 'cal-day' + (iso === sel.fecha ? ' sel' : '') + (iso === hoy ? ' today' : '');
+          html += '<button type="button" class="' + cls + '" data-fecha="' + iso + '"' + (iso < hoy ? ' disabled' : '') + '>' + d + '</button>';
+        }
+        var grid = document.getElementById('cal-grid');
+        grid.innerHTML = html;
+        grid.querySelectorAll('[data-fecha]').forEach(function (btn) {
+          btn.addEventListener('click', function () { sel.fecha = btn.dataset.fecha; sel.bloque = null; sel.fin = null; renderCalendario(); cargarSlots(); });
+        });
+        document.getElementById('cal-prev').disabled = offset <= 0;
+        document.getElementById('cal-prev').onclick = function () { if (offset > 0) { offset--; renderCalendario(); } };
+        document.getElementById('cal-next').onclick = function () { offset++; renderCalendario(); };
+      }
+
+      /* ---------- Bloques horarios (API REST) ---------- */
+      function cargarSlots() {
+        var cont = document.getElementById('slots');
+        cont.innerHTML = '<p class="col-span-3 text-xs text-gray-400 text-center py-4">Cargando disponibilidad...</p>';
+        CH.api.get('/canchas/' + canchaId + '/disponibilidad?fecha=' + sel.fecha).then(function (res) {
+          var bloques = res.bloques || [];
+          cont.innerHTML = bloques.map(function (b) {
+            return '<button type="button" class="slot" data-hora="' + b.horaInicio + '" data-fin="' + b.horaFin + '"' + (b.ocupado ? ' disabled title="No disponible"' : '') + '>' + b.horaInicio + '</button>';
+          }).join('');
+          cont.querySelectorAll('.slot:not(:disabled)').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+              sel.bloque = btn.dataset.hora; sel.fin = btn.dataset.fin;
+              cont.querySelectorAll('.slot').forEach(function (b) { b.classList.remove('sel'); });
+              btn.classList.add('sel');
+              actualizarResumen();
+            });
+          });
+          if (!sel.bloque) { var primero = bloques.find(function (b) { return !b.ocupado; }); if (primero) { sel.bloque = primero.horaInicio; sel.fin = primero.horaFin; } }
+          var selBtn = cont.querySelector('[data-hora="' + sel.bloque + '"]');
+          if (selBtn && !selBtn.disabled) selBtn.classList.add('sel');
+          actualizarResumen();
+        }).catch(function (e) { cont.innerHTML = '<p class="col-span-3 text-xs text-red-500 text-center py-4">' + e.message + '</p>'; });
+      }
+
+      function actualizarResumen() {
+        document.getElementById('r-fecha').textContent = CH.fmtFecha(sel.fecha, { weekday: 'long', day: 'numeric', month: 'short' });
+        document.getElementById('r-bloque').textContent = sel.bloque ? sel.bloque + ' - ' + sel.fin + ' hrs' : '—';
+        var btn = document.getElementById('btn-continuar');
+        btn.classList.toggle('opacity-50', !sel.bloque);
+        btn.classList.toggle('pointer-events-none', !sel.bloque);
+        btn.href = '/pago?canchaId=' + canchaId + '&fecha=' + sel.fecha + '&hora=' + encodeURIComponent(sel.bloque || '');
+      }
+
+      renderCalendario();
+      cargarSlots();
+    })();
+  </script>
+</body>
+</html>

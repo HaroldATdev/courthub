@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<!-- Vista: Dashboard de canchas con filtros (prototipo 2) · Controlador: CanchaViewController#dashboard -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Canchas Disponibles')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('canchas')}"></header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10">
+    <!-- ================= Filtros (GET → /dashboard) =================
+         Las pastillas de deporte son enlaces que conservan los demás filtros;
+         los selects envían el formulario (con el deporte actual en un campo oculto). -->
+    <form th:action="@{/dashboard}" method="get" class="flex flex-col xl:flex-row xl:items-end xl:justify-between gap-5 pt-6 pb-5">
+      <input type="hidden" name="q" th:value="${q}">
+      <input type="hidden" name="tipo" th:value="${tipo}">
+      <div class="flex flex-wrap gap-2">
+        <a th:each="d : ${deportes}" th:href="@{/dashboard(tipo=${d.key}, q=${q}, ubicacion=${ubicacion}, precio=${precio})}"
+           th:text="${d.value}" class="pill" th:classappend="${tipo == d.key} ? 'active'">Todos</a>
+      </div>
+
+      <div class="flex flex-wrap items-end gap-4">
+        <div>
+          <p class="ch-label-tiny mb-1.5">Ubicación</p>
+          <select name="ubicacion" class="ch-select" data-autosubmit>
+            <option value="">Lima, Perú</option>
+            <option th:each="c : ${comunas}" th:value="${c}" th:text="${c}" th:selected="${c == ubicacion}"></option>
+          </select>
+        </div>
+        <div>
+          <p class="ch-label-tiny mb-1.5">Rango de precio</p>
+          <select name="precio" class="ch-select" data-autosubmit>
+            <option value="">Todos los precios</option>
+            <option value="0-79.99" th:selected="${precio == '0-79.99'}">Menos de S/ 80</option>
+            <option value="80-110" th:selected="${precio == '80-110'}">S/ 80 — S/ 110</option>
+            <option value="110.01-99999" th:selected="${precio == '110.01-99999'}">Más de S/ 110</option>
+          </select>
+        </div>
+        <div class="flex items-center gap-2.5 pb-1.5">
+          <label class="switch"><input type="checkbox" id="f-hoy" checked><span class="track"></span></label>
+          <span class="text-sm font-medium text-slate-600 whitespace-nowrap">Disponible Hoy</span>
+        </div>
+      </div>
+    </form>
+
+    <!-- ================= Título ================= -->
+    <section class="flex flex-wrap items-end justify-between gap-2 mt-2">
+      <div>
+        <h1 class="font-display text-[26px] sm:text-3xl font-bold text-slate-900">Canchas disponibles para hoy</h1>
+        <p class="text-sm text-gray-500 mt-1">Reserva de forma inmediata con confirmación instantánea.</p>
+      </div>
+      <p class="text-sm text-gray-500" th:text="'Mostrando ' + ${#lists.size(canchas)} + ' cancha' + (${#lists.size(canchas) == 1} ? '' : 's') + ' verificada' + (${#lists.size(canchas) == 1} ? '' : 's')"></p>
+    </section>
+
+    <!-- ================= Grid de canchas (th:each) ================= -->
+    <section class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6" th:unless="${#lists.isEmpty(canchas)}">
+      <article th:each="c : ${canchas}" class="fade-up group bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(16,24,40,.05)] overflow-hidden hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300">
+        <div class="relative h-44 overflow-hidden bg-gradient-to-br from-primary-100 via-primary-50 to-emerald-200">
+          <img th:src="${c.imagen}" th:alt="${c.nombre}" th:data-fallback="'cancha' + ${c.id}" loading="lazy" class="w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-500">
+          <span class="absolute top-3 left-3 bg-slate-900/70 backdrop-blur-sm text-white text-[11px] font-semibold px-2.5 py-1 rounded-md" th:text="${@fmt.deporte(c.tipo)}">Fútbol</span>
+        </div>
+        <div class="p-5">
+          <h3 class="font-display font-semibold text-slate-900 leading-snug" th:text="${c.nombre}">Cancha</h3>
+          <div class="mt-1.5 flex items-center gap-1.5 text-sm">
+            <span class="text-amber-400" data-icon="star" data-cls="w-4 h-4"></span>
+            <span class="font-semibold text-slate-700" th:text="${@fmt.dec1(c.calificacion)}">4.8</span>
+            <span class="text-gray-400" th:text="'(' + ${c.opiniones} + ' opiniones)'"></span>
+          </div>
+          <div class="mt-1 flex items-center gap-1.5 text-sm text-gray-500"><span class="text-gray-400" data-icon="pin" data-cls="w-4 h-4"></span><span th:text="${c.comuna} + ', Lima'"></span></div>
+          <div class="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
+            <div><p class="ch-label-tiny">Precio hora</p><p class="font-display font-bold text-lg text-slate-900" th:text="${@fmt.pen(c.precioHora)}">S/ 95.00</p></div>
+            <a th:href="@{/canchas/{id}(id=${c.id})}" class="btn-primary !px-4 !py-2 !text-[13px]">Reservar <span data-icon="arrowRight" data-cls="w-4 h-4"></span></a>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <!-- Sin resultados -->
+    <section th:if="${#lists.isEmpty(canchas)}" class="text-center py-24">
+      <span class="inline-grid place-items-center w-16 h-16 rounded-full bg-primary-50 text-primary-500 mb-4" data-icon="search" data-cls="w-7 h-7"></span>
+      <h2 class="font-display font-semibold text-lg text-slate-800">No encontramos canchas</h2>
+      <p class="text-sm text-gray-500 mt-1">Prueba con otro deporte, distrito o rango de precio.</p>
+      <a th:href="@{/dashboard}" class="btn-outline mt-6">Limpiar filtros</a>
+    </section>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+  <script>
+    document.getElementById('f-hoy').addEventListener('change', function () {
+      CH.toast(this.checked ? 'Mostrando solo canchas disponibles para hoy.' : 'Mostrando todas las canchas.', 'info');
+    });
+  </script>
+</body>
+</html>

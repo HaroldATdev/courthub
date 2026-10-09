@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<!-- Vista: Login / Registro (prototipo 1) · Controlador: AuthViewController -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Reserva tu cancha en minutos')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800">
+  <main class="min-h-screen grid lg:grid-cols-2">
+
+    <!-- ================= Panel izquierdo (branding) ================= -->
+    <section class="relative hidden lg:flex flex-col justify-between p-10 xl:p-14 text-white overflow-hidden">
+      <img src="https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=1600&q=70"
+           onerror="this.style.display='none'" alt="Cancha deportiva nocturna" class="absolute inset-0 w-full h-full object-cover">
+      <div class="absolute inset-0 bg-gradient-to-t from-black/95 via-black/60 to-black/40"></div>
+      <div class="absolute inset-0" style="background:linear-gradient(160deg, rgba(16,185,129,.14), transparent 55%)"></div>
+
+      <div class="relative flex items-center gap-2.5">
+        <span class="w-10 h-10 rounded-xl bg-primary-500 grid place-items-center text-white shadow-[0_6px_18px_-6px_rgba(16,185,129,.8)]" data-icon="logo" data-cls="w-5 h-5"></span>
+        <span class="font-display font-bold text-[22px] tracking-tight">CourtHub</span>
+      </div>
+
+      <div class="relative max-w-xl fade-up">
+        <h1 class="font-display text-5xl xl:text-[56px] font-bold leading-[1.08]">Reserva tu cancha en minutos</h1>
+        <p class="mt-6 text-lg text-gray-200 leading-relaxed">Únete a la mayor comunidad de deportistas. Encuentra, reserva y juega en las mejores canchas de pádel, tenis y fútbol de tu ciudad de forma instantánea.</p>
+        <div class="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm font-medium text-gray-100">
+          <span class="flex items-center gap-2"><span class="text-primary-400" data-icon="checkCircle" data-cls="w-[18px] h-[18px]"></span>Confirmación al instante</span>
+          <span class="flex items-center gap-2"><span class="text-primary-400" data-icon="users" data-cls="w-[18px] h-[18px]"></span>+50.000 Jugadores</span>
+          <span class="flex items-center gap-2"><span class="text-primary-400" data-icon="star" data-cls="w-[18px] h-[18px]"></span>Canchas verificadas</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= Panel derecho (formularios) ================= -->
+    <section class="flex items-center justify-center p-6 sm:p-10">
+      <div class="w-full max-w-[480px] fade-up">
+        <div class="lg:hidden flex items-center justify-center gap-2.5 mb-8">
+          <span class="w-10 h-10 rounded-xl bg-primary-500 grid place-items-center text-white" data-icon="logo" data-cls="w-5 h-5"></span>
+          <span class="font-display font-bold text-[22px] text-slate-900">CourtHub</span>
+        </div>
+
+        <div class="bg-white rounded-3xl shadow-[0_24px_70px_-24px_rgba(16,24,40,.28)] p-7 sm:p-10">
+          <div class="grid grid-cols-2 mb-8 border-b border-gray-100">
+            <button id="tab-login" class="tab-btn" th:classappend="${tab != 'registro'} ? 'active'" type="button">Iniciar Sesión</button>
+            <button id="tab-registro" class="tab-btn" th:classappend="${tab == 'registro'} ? 'active'" type="button">Registrarse</button>
+          </div>
+
+          <p th:if="${info}" th:text="${info}" class="text-sm text-primary-700 bg-primary-50 border border-primary-100 rounded-xl px-4 py-3 mb-5"></p>
+
+          <!-- ---------- Formulario: Iniciar Sesión (POST /login) ---------- -->
+          <form id="form-login" th:action="@{/login}" th:object="${loginForm}" method="post" class="space-y-5" th:classappend="${tab == 'registro'} ? 'hidden'" novalidate>
+            <p th:if="${loginError}" th:text="${loginError}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"></p>
+            <div>
+              <label class="ch-label" for="login-email">Correo electrónico</label>
+              <div class="input-wrap">
+                <span data-icon="mail" data-cls="w-[18px] h-[18px]"></span>
+                <input id="login-email" type="email" th:field="*{email}" class="ch-input" placeholder="ejemplo@courthub.com" autocomplete="email">
+              </div>
+            </div>
+            <div>
+              <label class="ch-label" for="login-pass">Contraseña</label>
+              <div class="input-wrap">
+                <span data-icon="lock" data-cls="w-[18px] h-[18px]"></span>
+                <input id="login-pass" type="password" th:field="*{password}" class="ch-input pr-11" placeholder="••••••••••••" autocomplete="current-password">
+                <button type="button" class="eye-btn" data-eye="login-pass" aria-label="Mostrar contraseña"><span data-icon="eye" data-cls="w-[18px] h-[18px]"></span></button>
+              </div>
+            </div>
+            <div class="flex items-center justify-between">
+              <label class="flex items-center gap-2 text-sm text-slate-600 cursor-pointer select-none">
+                <input type="checkbox" checked class="w-4 h-4 rounded border-gray-300 accent-primary-500"> Recordarme
+              </label>
+              <a href="#" class="text-sm font-semibold text-primary-600 hover:text-primary-700">¿Olvidaste tu contraseña?</a>
+            </div>
+            <button type="submit" class="btn-primary w-full !py-3.5">Iniciar Sesión</button>
+
+            <div class="flex items-center gap-4 !mt-7">
+              <span class="h-px flex-1 bg-gray-100"></span>
+              <span class="text-[11px] font-semibold tracking-[.12em] text-gray-400">O CONTINUAR CON</span>
+              <span class="h-px flex-1 bg-gray-100"></span>
+            </div>
+            <div class="grid grid-cols-2 gap-3">
+              <button type="button" class="social" data-social="Google"><span data-icon="google" data-cls="w-[18px] h-[18px]"></span>Google</button>
+              <button type="button" class="social" data-social="Apple"><span data-icon="apple" data-cls="w-[18px] h-[18px]"></span>Apple</button>
+            </div>
+          </form>
+
+          <!-- ---------- Formulario: Registrarse (POST /registro) ---------- -->
+          <form id="form-registro" th:action="@{/registro}" th:object="${registroForm}" method="post" class="space-y-5" th:classappend="${tab != 'registro'} ? 'hidden'" novalidate>
+            <p th:if="${registroError}" th:text="${registroError}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"></p>
+            <div>
+              <label class="ch-label" for="reg-nombre">Nombre completo</label>
+              <div class="input-wrap">
+                <span data-icon="user" data-cls="w-[18px] h-[18px]"></span>
+                <input id="reg-nombre" type="text" th:field="*{nombre}" class="ch-input" placeholder="Gustavo Diaz" autocomplete="name">
+              </div>
+            </div>
+            <div>
+              <label class="ch-label" for="reg-email">Correo electrónico</label>
+              <div class="input-wrap">
+                <span data-icon="mail" data-cls="w-[18px] h-[18px]"></span>
+                <input id="reg-email" type="email" th:field="*{email}" class="ch-input" placeholder="ejemplo@courthub.com" autocomplete="email">
+              </div>
+            </div>
+            <div>
+              <label class="ch-label" for="reg-pass">Contraseña</label>
+              <div class="input-wrap">
+                <span data-icon="lock" data-cls="w-[18px] h-[18px]"></span>
+                <input id="reg-pass" type="password" th:field="*{password}" class="ch-input pr-11" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+                <button type="button" class="eye-btn" data-eye="reg-pass" aria-label="Mostrar contraseña"><span data-icon="eye" data-cls="w-[18px] h-[18px]"></span></button>
+              </div>
+            </div>
+            <div>
+              <label class="ch-label" for="reg-pass2">Confirmar contraseña</label>
+              <div class="input-wrap">
+                <span data-icon="lock" data-cls="w-[18px] h-[18px]"></span>
+                <input id="reg-pass2" type="password" th:field="*{password2}" class="ch-input pr-11" placeholder="Repite tu contraseña" autocomplete="new-password">
+                <button type="button" class="eye-btn" data-eye="reg-pass2" aria-label="Mostrar contraseña"><span data-icon="eye" data-cls="w-[18px] h-[18px]"></span></button>
+              </div>
+            </div>
+            <div>
+              <label class="ch-label" for="reg-rol">Tipo de cuenta</label>
+              <select id="reg-rol" th:field="*{rol}" class="ch-select !w-full !py-3">
+                <option value="cliente">Cliente — Reservar canchas y clases</option>
+                <option value="entrenador">Entrenador — Impartir clases</option>
+              </select>
+              <p class="text-[11px] text-gray-400 mt-1.5">Las cuentas de Administrador las crea el sistema.</p>
+            </div>
+            <button type="submit" class="btn-primary w-full !py-3.5">Crear Cuenta</button>
+          </form>
+        </div>
+        <p class="text-center mt-7 text-sm text-slate-600">¿Necesitas ayuda? Ponte en contacto con <a href="#" class="link-green">Soporte CourtHub</a></p>
+        <p class="text-center mt-3 text-xs text-gray-400">Demo: <b>demo@courthub.com</b> (cliente) · <b>admin@courthub.com</b> (administrador) · contraseña <b>Password123</b></p>
+      </div>
+    </section>
+  </main>
+
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+  <script>
+    (function () {
+      var tabL = document.getElementById('tab-login'), tabR = document.getElementById('tab-registro');
+      var fL = document.getElementById('form-login'), fR = document.getElementById('form-registro');
+      function setTab(login) {
+        tabL.classList.toggle('active', login); tabR.classList.toggle('active', !login);
+        fL.classList.toggle('hidden', !login); fR.classList.toggle('hidden', login);
+      }
+      tabL.addEventListener('click', function () { setTab(true); });
+      tabR.addEventListener('click', function () { setTab(false); });
+
+      document.querySelectorAll('[data-eye]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var input = document.getElementById(btn.getAttribute('data-eye'));
+          var visible = input.type === 'password';
+          input.type = visible ? 'text' : 'password';
+          btn.innerHTML = CH.icon(visible ? 'eyeOff' : 'eye', 'w-[18px] h-[18px]');
+        });
+      });
+      document.querySelectorAll('[data-social]').forEach(function (b) {
+        b.addEventListener('click', function () { CH.toast('El acceso con ' + b.dataset.social + ' requiere OAuth. Usa el formulario.', 'info'); });
+      });
+    })();
+  </script>
+</body>
+</html>

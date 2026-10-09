@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<!-- Vista: Mis reservas (prototipo 5) · Controlador: ReservaViewController#misReservas / #cancelar / #reprogramar -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Mis Reservas')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('reservas')}"></header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10 pt-8">
+    <h1 class="font-display text-3xl font-bold text-slate-900">Mis Reservas</h1>
+    <p class="text-sm text-gray-500 mt-1.5">Gestiona tus reservas y consulta tu historial.</p>
+
+    <!-- Pestañas con contadores (enlaces GET ?tab=) -->
+    <div class="flex flex-wrap gap-2 mt-6">
+      <a th:href="@{/mis-reservas(tab='todas')}" class="pill" th:classappend="${tab == 'todas'} ? 'active'">Todas</a>
+      <a th:href="@{/mis-reservas(tab='proximas')}" class="pill" th:classappend="${tab == 'proximas'} ? 'active'" th:text="'Próximas (' + ${conteos['proximas']} + ')'"></a>
+      <a th:href="@{/mis-reservas(tab='pasadas')}" class="pill" th:classappend="${tab == 'pasadas'} ? 'active'" th:text="'Pasadas (' + ${conteos['pasadas']} + ')'"></a>
+      <a th:href="@{/mis-reservas(tab='canceladas')}" class="pill" th:classappend="${tab == 'canceladas'} ? 'active'" th:text="'Canceladas (' + ${conteos['canceladas']} + ')'"></a>
+    </div>
+
+    <div class="space-y-4 mt-6" th:unless="${#lists.isEmpty(reservas)}">
+      <article th:each="r : ${reservas}" class="fade-up bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(16,24,40,.05)] p-5 flex flex-col md:flex-row md:items-center gap-4">
+        <div class="flex items-center gap-4 flex-1 min-w-0">
+          <span class="w-11 h-11 rounded-full bg-gray-100 text-gray-400 grid place-items-center shrink-0" data-icon="calendar" data-cls="w-5 h-5"></span>
+          <div class="min-w-0">
+            <div class="flex items-center gap-2 flex-wrap">
+              <h3 class="font-display font-semibold text-slate-900" th:text="${r.cancha.nombre}"></h3>
+              <span class="tag" th:text="${@fmt.deporte(r.cancha.tipo)}"></span>
+            </div>
+            <p class="text-sm text-gray-500 mt-0.5 flex items-center gap-1.5">
+              <span class="text-gray-400" data-icon="calendar" data-cls="w-3.5 h-3.5"></span>
+              <span th:text="${@fmt.fecha(r.fecha, 'EEEE d MMM yyyy')} + ', ' + ${r.horaInicio} + ' - ' + ${r.horaFin}"></span>
+            </p>
+          </div>
+        </div>
+        <div class="flex items-center gap-4 sm:gap-7 flex-wrap md:flex-nowrap">
+          <div class="text-right"><p class="ch-label-tiny">Total pagado</p><p class="font-display font-bold text-slate-900" th:text="${@fmt.pen(r.total)}"></p></div>
+          <span class="badge" th:classappend="'badge-' + ${r.estado}" th:text="${#strings.capitalize(r.estado)}"></span>
+          <div class="flex gap-2 ml-auto md:ml-0">
+            <th:block th:if="${r.esProxima(hoyFecha)}">
+              <button type="button" class="btn-outline" data-reprogramar th:attr="data-id=${r.id}, data-nombre=${r.cancha.nombre}, data-fecha=${r.fecha}, data-hora=${r.horaInicio}">Reprogramar</button>
+              <form th:action="@{/reservas/{id}/cancelar(id=${r.id})}" method="post" th:attr="data-confirm='¿Cancelar tu reserva en ' + ${r.cancha.nombre} + ' del ' + ${@fmt.fecha(r.fecha, 'EEEE d MMM')} + '?'">
+                <button type="submit" class="btn-danger">Cancelar</button>
+              </form>
+            </th:block>
+            <button th:unless="${r.esProxima(hoyFecha)}" type="button" class="btn-outline" data-detalle
+                    th:attr="data-cancha=${r.cancha.nombre}, data-codigo=${r.codigo}, data-fecha=${@fmt.fechaLarga(r.fecha)}, data-horario=${r.horaInicio + ' - ' + r.horaFin + ' hrs'}, data-estado=${r.estado}, data-metodo=${r.metodoPago}, data-total=${@fmt.pen(r.total)}">Ver Detalles</button>
+          </div>
+        </div>
+      </article>
+    </div>
+
+    <section th:if="${#lists.isEmpty(reservas)}" class="text-center py-24">
+      <span class="inline-grid place-items-center w-16 h-16 rounded-full bg-primary-50 text-primary-500 mb-4" data-icon="calendar" data-cls="w-7 h-7"></span>
+      <h2 class="font-display font-semibold text-lg text-slate-800">No hay reservas en esta categoría</h2>
+      <p class="text-sm text-gray-500 mt-1">Explora las canchas disponibles y agenda tu próximo partido.</p>
+      <a th:href="@{/dashboard}" class="btn-primary mt-6">Ver Canchas <span data-icon="arrowRight" data-cls="w-4 h-4"></span></a>
+    </section>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+
+  <!-- ============ Modal: Reprogramar (POST /reservas/{id}/reprogramar) ============ -->
+  <div id="modal-repro" class="ch-modal">
+    <div class="box">
+      <div class="flex items-start justify-between">
+        <div>
+          <h3 class="font-display font-bold text-lg text-slate-900">Reprogramar reserva</h3>
+          <p id="repro-sub" class="text-xs text-gray-400 mt-0.5"></p>
+        </div>
+        <button type="button" data-close class="text-gray-400 hover:text-slate-600 p-1" aria-label="Cerrar"><span data-icon="x" data-cls="w-5 h-5"></span></button>
+      </div>
+      <form id="repro-form" th:action="@{/reservas/0/reprogramar}" th:object="${reprogramarForm}" method="post" class="space-y-4 mt-5">
+        <div>
+          <label class="ch-label" for="repro-fecha">Nueva fecha</label>
+          <input id="repro-fecha" type="date" th:field="*{fecha}" class="ch-input ch-input-plain" th:min="${hoy}">
+        </div>
+        <div>
+          <label class="ch-label" for="repro-hora">Nuevo bloque horario</label>
+          <select id="repro-hora" th:field="*{horaInicio}" class="ch-select !w-full !py-3">
+            <option th:each="b : ${bloques}" th:value="${b}" th:text="${b}"></option>
+          </select>
+        </div>
+        <div class="flex gap-3 pt-1">
+          <button type="button" data-close class="btn-outline flex-1 !py-2.5">Cancelar</button>
+          <button type="submit" class="btn-primary flex-1 !py-2.5">Guardar cambios</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ============ Modal: Detalles ============ -->
+  <div id="modal-detalle" class="ch-modal">
+    <div class="box">
+      <div class="flex items-start justify-between">
+        <h3 class="font-display font-bold text-lg text-slate-900">Detalle de la reserva</h3>
+        <button type="button" data-close class="text-gray-400 hover:text-slate-600 p-1" aria-label="Cerrar"><span data-icon="x" data-cls="w-5 h-5"></span></button>
+      </div>
+      <div id="detalle-body" class="mt-4 text-sm space-y-3"></div>
+      <button type="button" data-close class="btn-outline w-full mt-5 !py-2.5">Cerrar</button>
+    </div>
+  </div>
+
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+  <script>
+    (function () {
+      var form = document.getElementById('repro-form');
+      var baseAction = form.getAttribute('action');
+      document.querySelectorAll('[data-reprogramar]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          form.setAttribute('action', baseAction.replace('/0/', '/' + btn.dataset.id + '/'));
+          document.getElementById('repro-sub').textContent = btn.dataset.nombre + ' · ' + CH.fmtFecha(btn.dataset.fecha) + ', ' + btn.dataset.hora;
+          document.getElementById('repro-fecha').value = btn.dataset.fecha;
+          document.getElementById('repro-hora').value = btn.dataset.hora;
+          CH.openModal('modal-repro');
+        });
+      });
+      document.querySelectorAll('[data-detalle]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var d = btn.dataset;
+          var filas = [['Cancha', d.cancha], ['Código', d.codigo], ['Fecha', d.fecha], ['Horario', d.horario],
+            ['Estado', '<span class="badge badge-' + d.estado + '">' + CH.cap(d.estado) + '</span>'], ['Método de pago', d.metodo], ['Total pagado', d.total]];
+          document.getElementById('detalle-body').innerHTML = filas.map(function (f) {
+            return '<div class="flex justify-between gap-3 items-center"><span class="text-gray-500 shrink-0">' + f[0] + '</span><span class="font-semibold text-slate-800 text-right">' + f[1] + '</span></div>';
+          }).join('');
+          CH.openModal('modal-detalle');
+        });
+      });
+    })();
+  </script>
+</body>
+</html>

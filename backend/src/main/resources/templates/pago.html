@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<!-- Vista: Pago y confirmación (prototipo 4) · Controlador: ReservaViewController#pago / #confirmar (POST /reservas) -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Pago y Confirmación')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('canchas')}"></header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10">
+    <div class="flex items-center gap-2 text-sm pt-5 flex-wrap">
+      <a th:href="@{/canchas/{id}(id=${cancha.id})}" class="flex items-center gap-1.5 text-primary-600 font-semibold hover:text-primary-700 transition">
+        <span data-icon="arrowLeft" data-cls="w-4 h-4"></span>Volver a la cancha
+      </a>
+      <span class="text-gray-300">/</span>
+      <span class="text-gray-500">Pago y Confirmación</span>
+    </div>
+
+    <form th:action="@{/reservas}" th:object="${reservaForm}" method="post" class="grid lg:grid-cols-5 gap-6 mt-5 items-start" novalidate>
+      <input type="hidden" th:field="*{canchaId}">
+      <input type="hidden" th:field="*{fecha}">
+      <input type="hidden" th:field="*{horaInicio}">
+      <input type="hidden" th:field="*{metodoPago}" id="metodoPago">
+
+      <!-- ============ Datos de pago ============ -->
+      <section class="lg:col-span-3 card p-6 sm:p-8">
+        <h1 class="font-display text-xl sm:text-2xl font-bold text-slate-900">Datos de Pago</h1>
+        <p class="text-sm text-gray-500 mt-1">Completa tu información de facturación de manera segura.</p>
+
+        <p class="ch-label mt-7">Método de Pago</p>
+        <div id="metodos" class="grid grid-cols-3 gap-3">
+          <button type="button" class="metodo" th:classappend="${reservaForm.metodoPago == 'Tarjeta de Crédito'} ? 'active'" data-metodo="Tarjeta de Crédito">
+            <span data-icon="card" data-cls="w-[18px] h-[18px] text-primary-600"></span><span class="hidden sm:inline">Tarjeta de Crédito</span>
+          </button>
+          <button type="button" class="metodo" th:classappend="${reservaForm.metodoPago == 'PayPal'} ? 'active'" data-metodo="PayPal">
+            <span data-icon="wallet" data-cls="w-[18px] h-[18px] text-blue-500"></span><span class="hidden sm:inline">PayPal</span>
+          </button>
+          <button type="button" class="metodo" th:classappend="${reservaForm.metodoPago == 'Webpay'} ? 'active'" data-metodo="Webpay">
+            <span data-icon="shieldCheck" data-cls="w-[18px] h-[18px] text-sky-600"></span><span class="hidden sm:inline">Webpay</span>
+          </button>
+        </div>
+
+        <div id="campos-tarjeta" class="space-y-5 mt-6" th:classappend="${reservaForm.metodoPago != 'Tarjeta de Crédito'} ? 'hidden'">
+          <div>
+            <label class="ch-label" for="t-nombre">Nombre en la Tarjeta</label>
+            <div class="input-wrap">
+              <span data-icon="user" data-cls="w-[18px] h-[18px]"></span>
+              <input id="t-nombre" type="text" th:field="*{nombreTarjeta}" class="ch-input" placeholder="Gustavo Diaz" autocomplete="cc-name">
+            </div>
+          </div>
+          <div>
+            <label class="ch-label" for="t-numero">Número de Tarjeta</label>
+            <div class="input-wrap">
+              <span data-icon="card" data-cls="w-[18px] h-[18px]"></span>
+              <input id="t-numero" type="text" inputmode="numeric" th:field="*{numeroTarjeta}" class="ch-input" placeholder="•••• •••• •••• 4242" maxlength="19" autocomplete="cc-number">
+            </div>
+          </div>
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="ch-label" for="t-venc">Fecha de Vencimiento</label>
+              <div class="input-wrap">
+                <span data-icon="calendar" data-cls="w-[18px] h-[18px]"></span>
+                <input id="t-venc" type="text" inputmode="numeric" th:field="*{vencimiento}" class="ch-input" placeholder="MM / AA" maxlength="7" autocomplete="cc-exp">
+              </div>
+            </div>
+            <div>
+              <label class="ch-label" for="t-cvv">CVV</label>
+              <div class="input-wrap">
+                <span data-icon="lock" data-cls="w-[18px] h-[18px]"></span>
+                <input id="t-cvv" type="password" inputmode="numeric" th:field="*{cvv}" class="ch-input" placeholder="•••" maxlength="4" autocomplete="cc-csc">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <label class="flex items-start gap-2.5 text-sm text-slate-600 mt-6 cursor-pointer select-none">
+          <input type="checkbox" th:field="*{terminos}" class="mt-0.5 w-4 h-4 rounded border-gray-300 accent-primary-500 shrink-0">
+          <span>Acepto los <a href="#" class="text-primary-600 font-medium underline underline-offset-2">términos, condiciones</a> y políticas de cancelación de CourtHub.</span>
+        </label>
+
+        <p th:if="${pagoError}" th:text="${pagoError}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mt-5"></p>
+        <button id="btn-pagar" class="btn-primary w-full mt-6 !py-3.5" type="submit">Confirmar Reserva</button>
+      </section>
+
+      <!-- ============ Resumen de reserva (Model) ============ -->
+      <aside class="lg:col-span-2 space-y-5">
+        <section class="card p-6 sm:p-7">
+          <h2 class="font-display text-lg font-bold text-slate-900">Resumen de Reserva</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Verifica los detalles antes de pagar.</p>
+
+          <div class="flex gap-3.5 mt-5 pb-5 border-b border-gray-100">
+            <img th:src="${cancha.imagen}" th:data-fallback="'cancha' + ${cancha.id}" class="w-16 h-16 rounded-xl object-cover bg-primary-100" alt="Cancha">
+            <div class="min-w-0">
+              <span class="text-[10px] font-bold tracking-wider text-primary-600 bg-primary-50 px-2 py-0.5 rounded" th:text="${#strings.toUpperCase(@fmt.deporte(cancha.tipo))}">FÚTBOL</span>
+              <p class="font-semibold text-sm text-slate-800 mt-1 leading-snug" th:text="${cancha.nombre}"></p>
+              <p class="text-xs text-gray-400 mt-0.5" th:text="${#strings.isEmpty(cancha.subtipo)} ? 'Cancha principal' : ${cancha.subtipo}"></p>
+            </div>
+          </div>
+
+          <dl class="text-sm space-y-3 py-5 border-b border-gray-100">
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Fecha</dt><dd class="font-semibold text-right text-slate-800" th:text="${@fmt.fechaLarga(reservaForm.fecha)}"></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Horario</dt><dd class="font-semibold text-slate-800" th:text="${reservaForm.horaInicio} + ' - ' + ${horaFin}"></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Duración</dt><dd class="font-semibold text-slate-800">1.5 horas</dd></div>
+          </dl>
+
+          <dl class="text-sm space-y-2.5 pt-5">
+            <div class="flex justify-between"><dt class="text-gray-500">Subtotal de la Cancha</dt><dd class="font-medium text-slate-700" th:text="${@fmt.pen(cotizacion.subtotal)}"></dd></div>
+            <div class="flex justify-between"><dt class="text-gray-500">Cargo por servicio CourtHub (10 %)</dt><dd class="font-medium text-slate-700" th:text="${@fmt.pen(cotizacion.cargo)}"></dd></div>
+          </dl>
+          <div class="flex items-center justify-between pt-4 mt-3 border-t border-gray-100">
+            <span class="font-display font-bold text-slate-900">Total</span>
+            <span class="font-display text-2xl font-bold text-slate-900" th:text="${@fmt.pen(cotizacion.total)}"></span>
+          </div>
+        </section>
+
+        <section class="bg-primary-50/60 border border-primary-100 rounded-2xl p-5">
+          <p class="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <span class="text-primary-500" data-icon="shieldCheck" data-cls="w-[18px] h-[18px]"></span>Pago 100% Protegido y Encriptado
+          </p>
+          <p class="text-xs text-gray-500 mt-2 leading-relaxed">Tus transacciones están respaldadas por estándares internacionales de seguridad SSL y protocolos de autenticación avanzada.</p>
+        </section>
+      </aside>
+    </form>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+  <script>
+    (function () {
+      /* Métodos de pago → campo oculto metodoPago */
+      document.querySelectorAll('#metodos .metodo').forEach(function (b) {
+        b.addEventListener('click', function () {
+          document.querySelectorAll('#metodos .metodo').forEach(function (x) { x.classList.remove('active'); });
+          b.classList.add('active');
+          document.getElementById('metodoPago').value = b.dataset.metodo;
+          document.getElementById('campos-tarjeta').classList.toggle('hidden', b.dataset.metodo !== 'Tarjeta de Crédito');
+        });
+      });
+      /* Formato automático de tarjeta */
+      document.getElementById('t-numero').addEventListener('input', function () { var d = this.value.replace(/\D/g, '').slice(0, 16); this.value = d.replace(/(.{4})/g, '$1 ').trim(); });
+      document.getElementById('t-venc').addEventListener('input', function () { var d = this.value.replace(/\D/g, '').slice(0, 4); this.value = d.length > 2 ? d.slice(0, 2) + ' / ' + d.slice(2) : d; });
+      document.getElementById('t-cvv').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 4); });
+      document.querySelector('form').addEventListener('submit', function () { var b = document.getElementById('btn-pagar'); b.disabled = true; b.textContent = 'Procesando pago...'; });
+    })();
+  </script>
+</body>
+</html>

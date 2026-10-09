@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<!-- Vista ERP: Resumen (KPIs, gráficos, reportes) · Controlador: AdminViewController#resumen -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Panel de Administración')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('admin')}"></header>
+
+  <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-6" th:with="k=${d.kpis}">
+    <div th:replace="~{admin/_layout :: cabecera('Resumen general', 'Indicadores de la operación de CourtHub en tiempo real.')}"></div>
+
+    <div class="grid lg:grid-cols-[220px_1fr] gap-6 mt-6 items-start">
+      <nav th:replace="~{admin/_layout :: sidebar}"></nav>
+
+      <section class="min-w-0 space-y-6">
+        <!-- ---------- KPIs ---------- -->
+        <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="card p-5 flex items-start gap-4"><span class="w-11 h-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center shrink-0" data-icon="wallet" data-cls="w-5 h-5"></span><div class="min-w-0"><p class="ch-label-tiny">Ingresos totales</p><p class="font-display text-2xl font-bold text-slate-900 mt-1 truncate" th:text="${@fmt.pen(k.ingresosTotales)}"></p><p class="text-xs text-gray-400 mt-0.5">Reservas no canceladas</p></div></div>
+          <div class="card p-5 flex items-start gap-4"><span class="w-11 h-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center shrink-0" data-icon="card" data-cls="w-5 h-5"></span><div class="min-w-0"><p class="ch-label-tiny">Ingresos del mes</p><p class="font-display text-2xl font-bold text-slate-900 mt-1 truncate" th:text="${@fmt.pen(k.ingresosMes)}"></p><p class="text-xs text-gray-400 mt-0.5" th:text="${k.reservasMes} + ' reservas este mes'"></p></div></div>
+          <div class="card p-5 flex items-start gap-4"><span class="w-11 h-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center shrink-0" data-icon="calendar" data-cls="w-5 h-5"></span><div class="min-w-0"><p class="ch-label-tiny">Reservas hoy</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${k.reservasHoy}"></p><p class="text-xs text-gray-400 mt-0.5" th:text="'Ocupación ' + ${k.ocupacionHoy} + '% de los bloques'"></p></div></div>
+          <div class="card p-5 flex items-start gap-4"><span class="w-11 h-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center shrink-0" data-icon="users" data-cls="w-5 h-5"></span><div class="min-w-0"><p class="ch-label-tiny">Usuarios activos</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${k.usuariosActivos}"></p><p class="text-xs text-gray-400 mt-0.5" th:text="${d.usuariosPorRol.cliente} + ' clientes · ' + ${d.usuariosPorRol.entrenador} + ' entrenadores'"></p></div></div>
+          <div class="card p-5 flex items-start gap-4"><span class="w-11 h-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center shrink-0" data-icon="pin" data-cls="w-5 h-5"></span><div class="min-w-0"><p class="ch-label-tiny">Canchas activas</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${k.canchasActivas}"></p><p class="text-xs text-gray-400 mt-0.5">Sedes disponibles para reservar</p></div></div>
+          <div class="card p-5 flex items-start gap-4"><span class="w-11 h-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center shrink-0" data-icon="activity" data-cls="w-5 h-5"></span><div class="min-w-0"><p class="ch-label-tiny">Reservas totales</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${k.reservasTotales}"></p><p class="text-xs text-gray-400 mt-0.5">Histórico completo</p></div></div>
+          <div class="card p-5 flex items-start gap-4"><span class="w-11 h-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center shrink-0" data-icon="star" data-cls="w-5 h-5"></span><div class="min-w-0"><p class="ch-label-tiny">Clases próximas</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${k.clasesProximas}"></p><p class="text-xs text-gray-400 mt-0.5" th:text="${k.inscripcionesActivas} + ' inscripciones activas'"></p></div></div>
+          <div class="card p-5 flex items-start gap-4"><span class="w-11 h-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center shrink-0" data-icon="clock" data-cls="w-5 h-5"></span><div class="min-w-0"><p class="ch-label-tiny">Fecha de corte</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${@fmt.fecha(d.fecha, 'dd MMM yyyy')}"></p><p class="text-xs text-gray-400 mt-0.5">Hora de Lima (America/Lima)</p></div></div>
+        </div>
+
+        <!-- ---------- Gráfico de ingresos por mes (SVG calculado en el servidor) + estados ---------- -->
+        <div class="grid lg:grid-cols-3 gap-6">
+          <div class="card p-6 lg:col-span-2">
+            <div class="flex items-center justify-between"><h2 class="font-display font-semibold text-slate-900">Ingresos por mes</h2><span class="text-xs text-gray-400">Últimos 6 meses · S/</span></div>
+            <svg th:attr="viewBox='0 0 ' + ${grafico.ancho} + ' ' + ${grafico.alto}" class="w-full h-auto mt-4" role="img" aria-label="Ingresos por mes">
+              <g th:each="l : ${grafico.grid}">
+                <line x1="56" th:attr="x2=${grafico.ancho - 12}, y1=${l.y}, y2=${l.y}" stroke="#eef0f2" stroke-width="1"/>
+                <text x="48" th:attr="y=${l.y + 4}" text-anchor="end" font-size="11" fill="#94a3b8" th:text="${l.etiqueta}"></text>
+              </g>
+              <g th:each="b : ${grafico.barras}" class="admin-bar">
+                <title th:text="${@fmt.mes(b.mes)} + ': ' + ${@fmt.pen(b.total)} + ' · ' + ${b.reservas} + ' reservas'"></title>
+                <rect th:if="${b.h gt 0}" th:attr="x=${b.x}, y=${b.y}, width=${b.w}, height=${b.h}" rx="4" fill="#10b981"/>
+                <rect th:if="${b.h gt 4}" th:attr="x=${b.x}, y=${b.y + 4}, width=${b.w}, height=${b.h - 4}" fill="#10b981"/>
+                <rect th:if="${b.h le 0}" th:attr="x=${b.x}, y=${b.y - 2}, width=${b.w}" height="2" fill="#d1d5db"/>
+                <text th:if="${b.maximo}" th:attr="x=${b.x + b.w / 2}, y=${b.y - 6}" text-anchor="middle" font-size="11" font-weight="600" fill="#334155" th:text="${@fmt.pen(b.total)}"></text>
+                <text th:attr="x=${b.x + b.w / 2}, y=${grafico.alto - 12}" text-anchor="middle" font-size="11" fill="#64748b" th:text="${@fmt.mes(b.mes)}"></text>
+              </g>
+              <line x1="56" th:attr="x2=${grafico.ancho - 12}, y1=${grafico.baseY}, y2=${grafico.baseY}" stroke="#cbd5e1" stroke-width="1"/>
+            </svg>
+          </div>
+          <div class="card p-6">
+            <h2 class="font-display font-semibold text-slate-900">Reservas por estado</h2>
+            <div class="mt-4 space-y-3">
+              <div th:each="e : ${d.reservasPorEstado}" class="flex items-center justify-between">
+                <span th:replace="~{admin/_layout :: estado(${e.key})}"></span>
+                <span class="font-display font-bold text-slate-900" th:text="${e.value}"></span>
+              </div>
+            </div>
+            <h3 class="ch-label-tiny mt-6 mb-2">Métodos de pago</h3>
+            <p th:if="${#lists.isEmpty(d.ingresosPorMetodo)}" class="text-xs text-gray-400">Sin datos.</p>
+            <div th:each="m : ${d.ingresosPorMetodo}" class="flex items-center justify-between text-sm py-1.5 border-t border-gray-50">
+              <span class="text-slate-600"><span th:text="${m.metodo}"></span> <span class="text-gray-400" th:text="'(' + ${m.reservas} + ')'"></span></span>
+              <b class="text-slate-800" th:text="${@fmt.pen(m.total)}"></b>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---------- Ingresos por cancha / deporte (barras horizontales) ---------- -->
+        <div class="grid lg:grid-cols-2 gap-6">
+          <div class="card p-6" th:with="lista=${d.ingresosPorCancha}, max=${#lists.isEmpty(lista) ? 1 : lista[0].total}">
+            <h2 class="font-display font-semibold text-slate-900">Ingresos por cancha</h2>
+            <p th:if="${#lists.isEmpty(lista)}" class="text-xs text-gray-400 mt-4">Sin datos todavía.</p>
+            <div class="mt-4 space-y-3">
+              <div th:each="x : ${lista}" th:title="${x.cancha} + ': ' + ${@fmt.pen(x.total)} + ' en ' + ${x.reservas} + ' reservas'">
+                <div class="flex justify-between text-sm mb-1"><span class="text-slate-700 truncate pr-3"><span th:text="${x.cancha}"></span> <span class="text-gray-400 text-xs" th:text="'(' + ${x.reservas} + ')'"></span></span><b class="text-slate-900 shrink-0" th:text="${@fmt.pen(x.total)}"></b></div>
+                <div class="h-2 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary-500 rounded-full" th:style="'width:' + ${@fmt.pct(x.total, max)} + '%'"></div></div>
+              </div>
+            </div>
+          </div>
+          <div class="card p-6" th:with="lista=${d.ingresosPorDeporte}, max=${#lists.isEmpty(lista) ? 1 : lista[0].total}">
+            <h2 class="font-display font-semibold text-slate-900">Ingresos por deporte</h2>
+            <p th:if="${#lists.isEmpty(lista)}" class="text-xs text-gray-400 mt-4">Sin datos todavía.</p>
+            <div class="mt-4 space-y-3">
+              <div th:each="x : ${lista}">
+                <div class="flex justify-between text-sm mb-1"><span class="text-slate-700 truncate pr-3"><span th:text="${@fmt.deporte(x.deporte)}"></span> <span class="text-gray-400 text-xs" th:text="'(' + ${x.reservas} + ')'"></span></span><b class="text-slate-900 shrink-0" th:text="${@fmt.pen(x.total)}"></b></div>
+                <div class="h-2 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary-500 rounded-full" th:style="'width:' + ${@fmt.pct(x.total, max)} + '%'"></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- ---------- Últimas reservas ---------- -->
+        <div>
+          <div class="flex items-center justify-between mb-3"><h2 class="font-display font-semibold text-slate-900">Últimas reservas registradas</h2><a th:href="@{/admin/reservas}" class="btn-outline !py-1.5 !px-3">Ver todas</a></div>
+          <div class="card overflow-hidden"><div class="overflow-x-auto"><table class="admin-table">
+            <thead><tr><th>Código</th><th>Cliente</th><th>Cancha</th><th>Fecha</th><th>Total</th><th>Estado</th></tr></thead>
+            <tbody>
+              <tr th:each="r : ${d.ultimasReservas}">
+                <td class="font-mono text-xs" th:text="${r.codigo}"></td>
+                <td th:text="${r.cliente != null ? r.cliente.nombre : '—'}"></td>
+                <td th:text="${r.cancha.nombre}"></td>
+                <td th:text="${@fmt.fecha(r.fecha, 'dd MMM yyyy')} + ' · ' + ${r.horaInicio}"></td>
+                <td class="font-semibold" th:text="${@fmt.pen(r.total)}"></td>
+                <td><span th:replace="~{admin/_layout :: estado(${r.estado})}"></span></td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(d.ultimasReservas)}"><td colspan="6" class="text-center text-gray-400 py-8">Sin registros.</td></tr>
+            </tbody>
+          </table></div></div>
+        </div>
+
+        <!-- ---------- Próximas clases ---------- -->
+        <div>
+          <div class="flex items-center justify-between mb-3"><h2 class="font-display font-semibold text-slate-900">Próximas clases</h2><a th:href="@{/admin/clases}" class="btn-outline !py-1.5 !px-3">Gestionar</a></div>
+          <div class="card overflow-hidden"><div class="overflow-x-auto"><table class="admin-table">
+            <thead><tr><th>Clase</th><th>Deporte</th><th>Entrenador</th><th>Fecha</th><th>Cupo</th></tr></thead>
+            <tbody>
+              <tr th:each="c : ${d.proximasClases}">
+                <td class="font-semibold" th:text="${c.nombre}"></td>
+                <td th:text="${@fmt.deporte(c.deporte)}"></td>
+                <td th:text="${c.entrenador.nombre}"></td>
+                <td th:text="${@fmt.fecha(c.fecha, 'dd MMM yyyy')} + ' · ' + ${c.horaInicio}"></td>
+                <td><div th:replace="~{admin/_layout :: cupo(${c.inscritos}, ${c.cupoMax})}"></div></td>
+              </tr>
+              <tr th:if="${#lists.isEmpty(d.proximasClases)}"><td colspan="5" class="text-center text-gray-400 py-8">No hay clases programadas.</td></tr>
+            </tbody>
+          </table></div></div>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

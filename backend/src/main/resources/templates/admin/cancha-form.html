@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!-- Vista ERP: Formulario de cancha (crear / editar) · th:object="${canchaForm}" · Controlador: AdminViewController -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${canchaId == null ? 'Nueva cancha' : 'Editar cancha'})}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('admin')}"></header>
+
+  <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-6">
+    <div th:replace="~{admin/_layout :: cabecera(${canchaId == null ? 'Nueva cancha' : 'Editar cancha'}, 'Completa los datos de la sede deportiva.')}"></div>
+
+    <div class="grid lg:grid-cols-[220px_1fr] gap-6 mt-6 items-start">
+      <nav th:replace="~{admin/_layout :: sidebar}"></nav>
+
+      <section class="min-w-0">
+        <form th:action="${canchaId == null} ? @{/admin/canchas} : @{/admin/canchas/{id}(id=${canchaId})}" th:object="${canchaForm}" method="post" class="card p-6 sm:p-8 space-y-5" novalidate>
+          <p th:if="${formError}" th:text="${formError}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"></p>
+          <p th:if="${#fields.hasErrors('*')}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3" th:errors="*{*}"></p>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2"><label class="ch-label">Nombre</label><input type="text" th:field="*{nombre}" class="ch-input ch-input-plain" placeholder="Complejo Deportivo ..."></div>
+            <div><label class="ch-label">Deporte</label>
+              <select th:field="*{tipo}" class="ch-select !w-full !py-2.5">
+                <option th:each="d : ${deportes}" th:if="${d.key != 'todos'}" th:value="${d.key}" th:text="${d.value}"></option>
+              </select></div>
+            <div><label class="ch-label">Subtipo</label><input type="text" th:field="*{subtipo}" class="ch-input ch-input-plain" placeholder="Fútbol 7 · Outdoor"></div>
+            <div><label class="ch-label">Distrito</label><input type="text" th:field="*{comuna}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">Ciudad</label><input type="text" th:field="*{ciudad}" class="ch-input ch-input-plain"></div>
+            <div class="sm:col-span-2"><label class="ch-label">Dirección</label><input type="text" th:field="*{direccion}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">Precio por hora (S/)</label><input type="number" step="0.01" min="1" th:field="*{precioHora}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">Calificación (0-5)</label><input type="number" step="0.1" min="0" max="5" th:field="*{calificacion}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">N° de opiniones</label><input type="number" min="0" th:field="*{opiniones}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">URL de imagen</label><input type="text" th:field="*{imagen}" class="ch-input ch-input-plain" placeholder="https://..."></div>
+            <div class="sm:col-span-2"><label class="ch-label">Descripción</label><textarea th:field="*{descripcion}" rows="3" class="ch-textarea"></textarea></div>
+            <div class="sm:col-span-2"><label class="ch-label">Servicios (separados por coma)</label><textarea th:field="*{servicios}" rows="2" class="ch-textarea" placeholder="Estacionamiento, Duchas de agua caliente, Iluminación LED"></textarea></div>
+            <div class="sm:col-span-2"><label class="ch-label">Reglamento (una regla por línea)</label><textarea th:field="*{reglamento}" rows="3" class="ch-textarea"></textarea></div>
+            <label class="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none"><input type="checkbox" th:field="*{verificada}" class="w-4 h-4 rounded border-gray-300 accent-primary-500">Cancha verificada</label>
+            <label class="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none"><input type="checkbox" th:field="*{activa}" class="w-4 h-4 rounded border-gray-300 accent-primary-500">Activa (visible para clientes)</label>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <a th:href="@{/admin/canchas}" class="btn-outline flex-1 !py-2.5">Cancelar</a>
+            <button type="submit" class="btn-primary flex-1 !py-2.5">Guardar</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

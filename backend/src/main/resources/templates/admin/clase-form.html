@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!-- Vista ERP: Formulario de clase (crear / editar) · th:object="${claseForm}" · Controlador: AdminViewController -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head(${claseId == null ? 'Nueva clase' : 'Editar clase'})}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('admin')}"></header>
+
+  <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-6">
+    <div th:replace="~{admin/_layout :: cabecera(${claseId == null ? 'Nueva clase' : 'Editar clase'}, 'Asigna entrenador, cancha, horario y cupo.')}"></div>
+
+    <div class="grid lg:grid-cols-[220px_1fr] gap-6 mt-6 items-start">
+      <nav th:replace="~{admin/_layout :: sidebar}"></nav>
+
+      <section class="min-w-0">
+        <div th:if="${#lists.isEmpty(entrenadores)}" class="card p-6 text-sm text-amber-700 bg-amber-50 border-amber-100 mb-4">Primero registra un usuario con rol <b>Entrenador</b> en la sección Usuarios.</div>
+        <form th:action="${claseId == null} ? @{/admin/clases} : @{/admin/clases/{id}(id=${claseId})}" th:object="${claseForm}" method="post" class="card p-6 sm:p-8 space-y-5" novalidate>
+          <p th:if="${formError}" th:text="${formError}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"></p>
+          <p th:if="${#fields.hasErrors('*')}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3" th:errors="*{*}"></p>
+
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div class="sm:col-span-2"><label class="ch-label">Nombre de la clase</label><input type="text" th:field="*{nombre}" class="ch-input ch-input-plain" placeholder="Pádel Inicial: Golpes Básicos"></div>
+            <div><label class="ch-label">Deporte</label>
+              <select th:field="*{deporte}" class="ch-select !w-full !py-2.5">
+                <option th:each="d : ${deportes}" th:if="${d.key != 'todos'}" th:value="${d.key}" th:text="${d.value}"></option>
+              </select></div>
+            <div><label class="ch-label">Nivel</label>
+              <select th:field="*{nivel}" class="ch-select !w-full !py-2.5">
+                <option th:each="n : ${ {'Todos los niveles','Principiante','Intermedio','Avanzado'} }" th:value="${n}" th:text="${n}"></option>
+              </select></div>
+            <div><label class="ch-label">Entrenador</label>
+              <select th:field="*{entrenadorId}" class="ch-select !w-full !py-2.5">
+                <option th:each="e : ${entrenadores}" th:value="${e.id}" th:text="${e.nombre} + ' ' + ${e.apellido}"></option>
+              </select></div>
+            <div><label class="ch-label">Cancha</label>
+              <select th:field="*{canchaId}" class="ch-select !w-full !py-2.5">
+                <option value="">— Sin cancha asignada —</option>
+                <option th:each="c : ${canchasActivas}" th:value="${c.id}" th:text="${c.nombre} + ' (' + ${c.comuna} + ')'"></option>
+              </select></div>
+            <div><label class="ch-label">Fecha</label><input type="date" th:field="*{fecha}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">Precio por clase (S/)</label><input type="number" step="0.01" min="0" th:field="*{precio}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">Hora de inicio</label><input type="time" th:field="*{horaInicio}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">Hora de fin</label><input type="time" th:field="*{horaFin}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">Cupo máximo</label><input type="number" min="1" th:field="*{cupoMaximo}" class="ch-input ch-input-plain"></div>
+            <label class="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none pt-6"><input type="checkbox" th:field="*{activa}" class="w-4 h-4 rounded border-gray-300 accent-primary-500">Activa (visible para clientes)</label>
+            <div class="sm:col-span-2"><label class="ch-label">Descripción</label><textarea th:field="*{descripcion}" rows="3" class="ch-textarea"></textarea></div>
+          </div>
+
+          <div class="flex gap-3 pt-2">
+            <a th:href="@{/admin/clases}" class="btn-outline flex-1 !py-2.5">Cancelar</a>
+            <button type="submit" class="btn-primary flex-1 !py-2.5" th:disabled="${#lists.isEmpty(entrenadores)}">Guardar</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

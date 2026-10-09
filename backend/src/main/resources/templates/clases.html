@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<!-- Vista: Clases deportivas (prototipo 6) · Controlador: ClaseViewController -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Clases Deportivas')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('clases')}"></header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10 pt-8">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <h1 class="font-display text-3xl font-bold text-slate-900">Clases Deportivas</h1>
+        <p class="text-sm text-gray-500 mt-1.5">Entrena con los mejores profesionales de CourtHub y mejora tu juego.</p>
+      </div>
+      <p class="text-sm text-gray-500" th:text="${#lists.size(clases)} + ' clase' + (${#lists.size(clases) == 1} ? '' : 's') + ' disponibles'"></p>
+    </div>
+
+    <!-- Filtro por deporte -->
+    <div class="flex flex-wrap gap-2 mt-6">
+      <a th:each="d : ${deportes}" th:href="@{/clases(deporte=${d.key})}" th:text="${d.value}" class="pill" th:classappend="${deporte == d.key} ? 'active'"></a>
+    </div>
+
+    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-7" th:unless="${#lists.isEmpty(clases)}">
+      <article th:each="k : ${clases}" class="fade-up bg-white rounded-2xl border border-gray-100 shadow-[0_1px_3px_rgba(16,24,40,.05)] p-5 flex flex-col gap-4">
+        <div class="flex items-start justify-between gap-3">
+          <div class="flex items-center gap-3 min-w-0">
+            <span class="w-11 h-11 rounded-xl bg-primary-50 text-primary-600 grid place-items-center shrink-0" data-icon="activity" data-cls="w-5 h-5"></span>
+            <div class="min-w-0">
+              <h3 class="font-display font-semibold text-slate-900 leading-snug" th:text="${k.nombre}"></h3>
+              <p class="text-xs text-gray-400 mt-0.5" th:text="${@fmt.deporte(k.deporte)} + ' · ' + ${k.nivel}"></p>
+            </div>
+          </div>
+          <span class="w-9 h-9 rounded-full bg-slate-100 text-slate-600 grid place-items-center text-[10px] font-bold shrink-0" title="Entrenador" th:text="${k.entrenador.iniciales()}"></span>
+        </div>
+        <div class="grid grid-cols-1 gap-2 text-sm text-gray-600">
+          <span class="flex items-center gap-2"><span class="text-gray-400" data-icon="user" data-cls="w-4 h-4"></span>Coach: <b class="font-semibold" th:text="${k.entrenador.nombre}"></b></span>
+          <span class="flex items-center gap-2"><span class="text-gray-400" data-icon="calendar" data-cls="w-4 h-4"></span><span th:text="${@fmt.fechaMedia(k.fecha)}"></span></span>
+          <span class="flex items-center gap-2"><span class="text-gray-400" data-icon="clock" data-cls="w-4 h-4"></span><span th:text="${k.horaInicio} + ' - ' + ${k.horaFin} + ' hrs'"></span></span>
+          <span class="flex items-center gap-2"><span class="text-gray-400" data-icon="pin" data-cls="w-4 h-4"></span><span th:text="${k.cancha != null ? k.cancha.nombre : '—'}"></span></span>
+        </div>
+        <div>
+          <div class="flex justify-between text-xs mb-1.5"><span class="text-gray-500">Cupos disponibles</span><span class="font-semibold text-slate-700" th:text="${k.cuposDisponibles} + ' de ' + ${k.cupoMax}"></span></div>
+          <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary-500 rounded-full transition-all" th:style="'width:' + ${@fmt.pct(k.inscritos, k.cupoMax)} + '%'"></div></div>
+        </div>
+        <div class="flex items-center justify-between pt-3.5 border-t border-gray-100">
+          <p class="font-display font-bold text-slate-900"><span th:text="${@fmt.pen(k.precio)}"></span><span class="text-xs text-gray-400 font-sans font-normal"> /clase</span></p>
+          <form th:if="${k.inscrito}" th:action="@{/clases/{id}/abandonar(id=${k.id})}" method="post">
+            <input type="hidden" name="deporte" th:value="${deporte}">
+            <button type="submit" class="btn-outline !text-primary-600 !border-primary-300 !bg-primary-50"><span data-icon="check" data-cls="w-4 h-4"></span>Inscrito — Salir</button>
+          </form>
+          <button th:if="${!k.inscrito and k.cuposDisponibles le 0}" type="button" class="btn-outline opacity-50 cursor-not-allowed" disabled>Cupo lleno</button>
+          <form th:if="${!k.inscrito and k.cuposDisponibles gt 0}" th:action="@{/clases/{id}/inscribirse(id=${k.id})}" method="post">
+            <input type="hidden" name="deporte" th:value="${deporte}">
+            <button type="submit" class="btn-primary !px-4 !py-2 !text-[13px]">Apuntarme <span data-icon="arrowRight" data-cls="w-4 h-4"></span></button>
+          </form>
+        </div>
+      </article>
+    </div>
+
+    <section th:if="${#lists.isEmpty(clases)}" class="text-center py-24">
+      <span class="inline-grid place-items-center w-16 h-16 rounded-full bg-primary-50 text-primary-500 mb-4" data-icon="activity" data-cls="w-7 h-7"></span>
+      <h2 class="font-display font-semibold text-lg text-slate-800">No hay clases en este deporte</h2>
+      <p class="text-sm text-gray-500 mt-1">Prueba con otro deporte o vuelve más tarde.</p>
+    </section>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

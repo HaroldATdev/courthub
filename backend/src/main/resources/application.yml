@@ -1,0 +1,63 @@
+# ============================================================
+# CourtHub · application.yml — Configuración de Spring Boot (MVC)
+# Las variables ${...} se leen del entorno (docker-compose / .env)
+# ============================================================
+server:
+  port: ${PORT:8080}
+  error:
+    include-message: never
+    include-stacktrace: never
+
+spring:
+  application:
+    name: courthub
+
+  # ---------- Base de datos (PostgreSQL) ----------
+  datasource:
+    url: jdbc:postgresql://${PGHOST:localhost}:${PGPORT:5432}/${PGDATABASE:courthub}
+    username: ${PGUSER:courthub}
+    password: ${PGPASSWORD:courthub}
+    hikari:
+      maximum-pool-size: 10
+
+  # ---------- JPA / Hibernate ----------
+  jpa:
+    hibernate:
+      ddl-auto: none          # el esquema lo define db/schema.sql (no lo genera Hibernate)
+    open-in-view: false
+    show-sql: false
+
+  # ---------- Inicialización del esquema (idempotente: CREATE ... IF NOT EXISTS) ----------
+  sql:
+    init:
+      mode: always
+      encoding: UTF-8
+      schema-locations: classpath:db/schema.sql
+
+  # ---------- Vistas (Thymeleaf) ----------
+  thymeleaf:
+    cache: ${THYMELEAF_CACHE:true}
+    encoding: UTF-8
+
+  web:
+    resources:
+      cache:
+        cachecontrol:
+          max-age: 1h
+
+  jackson:
+    default-property-inclusion: non_null
+    time-zone: America/Lima
+
+# ---------- Configuración propia de CourtHub ----------
+courthub:
+  jwt:
+    secret: ${JWT_SECRET:courthub-dev-secret-cambia-esta-clave-en-produccion}
+    expiration-hours: 8
+  seed-demo: ${SEED_DEMO:true}   # carga db/seed.sql si la tabla usuarios está vacía
+  cors-origins: ${CORS_ORIGINS:*}
+
+logging:
+  level:
+    com.courthub: INFO
+    org.springframework.security: WARN

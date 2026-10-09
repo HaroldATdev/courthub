@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<!-- Fragmentos del panel ERP: cabecera de sección y barra lateral de navegación -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="cabecera(titulo, subtitulo)" class="flex flex-wrap items-end justify-between gap-3">
+  <div>
+    <p class="ch-label-tiny">Panel ERP · Administración</p>
+    <h1 class="font-display text-3xl font-bold text-slate-900 mt-1" th:text="${titulo}">Resumen</h1>
+    <p class="text-sm text-gray-500 mt-1.5" th:text="${subtitulo}"></p>
+  </div>
+</div>
+
+<nav th:fragment="sidebar" class="card p-2 flex lg:flex-col gap-1 overflow-x-auto lg:sticky lg:top-20">
+  <a th:href="@{/admin}" class="admin-nav-btn" th:classappend="${seccion == 'resumen'} ? 'active'"><span data-icon="activity" data-cls="w-4 h-4"></span><span>Resumen</span></a>
+  <a th:href="@{/admin/reservas}" class="admin-nav-btn" th:classappend="${seccion == 'reservas'} ? 'active'"><span data-icon="calendar" data-cls="w-4 h-4"></span><span>Reservas</span></a>
+  <a th:href="@{/admin/canchas}" class="admin-nav-btn" th:classappend="${seccion == 'canchas'} ? 'active'"><span data-icon="pin" data-cls="w-4 h-4"></span><span>Canchas</span></a>
+  <a th:href="@{/admin/clases}" class="admin-nav-btn" th:classappend="${seccion == 'clases'} ? 'active'"><span data-icon="star" data-cls="w-4 h-4"></span><span>Clases</span></a>
+  <a th:href="@{/admin/inscripciones}" class="admin-nav-btn" th:classappend="${seccion == 'inscripciones'} ? 'active'"><span data-icon="checkCircle" data-cls="w-4 h-4"></span><span>Inscripciones</span></a>
+  <a th:href="@{/admin/usuarios}" class="admin-nav-btn" th:classappend="${seccion == 'usuarios'} ? 'active'"><span data-icon="users" data-cls="w-4 h-4"></span><span>Usuarios</span></a>
+</nav>
+
+<!-- Insignia de estado reutilizable: estado(valor) -->
+<span th:fragment="estado(valor)" class="badge" th:classappend="'badge-' + ${valor}" th:text="${#strings.capitalize(valor)}"></span>
+
+<!-- Insignia activo/inactivo: activo(flag, si, no) -->
+<span th:fragment="activo(flag, si, no)" class="badge" th:classappend="${flag} ? 'badge-confirmada' : 'badge-cancelada'" th:text="${flag} ? ${si} : ${no}"></span>
+
+<!-- Barra de cupo: cupo(inscritos, max) -->
+<div th:fragment="cupo(inscritos, max)" class="min-w-[120px]" th:with="pct=${@fmt.pct(inscritos, max)}">
+  <div class="flex justify-between text-xs mb-1"><span class="text-gray-500" th:text="${inscritos} + ' / ' + ${max}"></span><span class="text-gray-400" th:text="${pct} + '%'"></span></div>
+  <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full rounded-full" th:classappend="${pct ge 100} ? 'bg-red-400' : 'bg-primary-500'" th:style="'width:' + ${pct} + '%'"></div></div>
+</div>
+
+</body>
+</html>

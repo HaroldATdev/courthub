@@ -1,10 +1,11 @@
 # ============================================================
 # CourtHub · docker-compose.yml
-# Levanta Base de Datos (PostgreSQL) + Backend (Node/Express)
-# + Frontend (Nginx) interconectados, con volumen persistente.
+# Levanta Base de Datos (PostgreSQL) + Aplicación Spring Boot MVC
+# (vistas Thymeleaf + API REST en un solo servicio), con volumen persistente.
 #
 #   Uso:  docker compose up --build
-#   Web:  http://localhost:8080   ·   API: http://localhost:3000/api/health
+#   Web:  http://localhost:8080          ·   API: http://localhost:8080/api/health
+#   Admin (ERP): http://localhost:8080/admin  (admin@courthub.com / Password123)
 # ============================================================
 services:
 
@@ -16,11 +17,9 @@ services:
       POSTGRES_USER: courthub
       POSTGRES_PASSWORD: courthub
       POSTGRES_DB: courthub
+      TZ: America/Lima
     volumes:
       - pgdata:/var/lib/postgresql/data
-      # Scripts automáticos de inicialización (solo la primera vez)
-      - ./database/01-schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
-      - ./database/02-seed.sql:/docker-entrypoint-initdb.d/02-seed.sql:ro
     ports:
       - "5433:5432"   # acceso opcional desde el host (pgAdmin, DBeaver…)
     healthcheck:
@@ -30,33 +29,32 @@ services:
       retries: 10
     restart: unless-stopped
 
-  # ---------------- Backend (API REST) ----------------
-  backend:
+  # ---------------- Aplicación (Spring Boot MVC) ----------------
+  # Al arrancar ejecuta db/schema.sql (idempotente) y, si la BD está vacía, db/seed.sql
+  app:
     build: ./backend
-    container_name: courthub-api
+    container_name: courthub-app
     environment:
-      PORT: 3000
+      PORT: 8080
       PGHOST: db
       PGPORT: 5432
       PGUSER: courthub
       PGPASSWORD: courthub
       PGDATABASE: courthub
       JWT_SECRET: cambia-esta-clave-en-produccion
+      SEED_DEMO: "true"
+      TZ: America/Lima
     ports:
-      - "3000:3000"
+      - "8080:8080"
     depends_on:
       db:
         condition: service_healthy
-    restart: unless-stopped
-
-  # ---------------- Frontend (Nginx) ----------------
-  frontend:
-    build: ./frontend
-    container_name: courthub-web
-    ports:
-      - "8080:80"
-    depends_on:
-      - backend
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fs http://localhost:8080/api/health || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 40s
     restart: unless-stopped
 
 volumes:

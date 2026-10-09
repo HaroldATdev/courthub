@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<!-- Vista ERP: Clases deportivas · Controlador: AdminViewController#clases / #estadoClase -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Admin · Clases')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('admin')}"></header>
+
+  <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-6">
+    <div th:replace="~{admin/_layout :: cabecera('Clases deportivas', 'Programa clases, asigna entrenadores y controla el cupo.')}"></div>
+
+    <div class="grid lg:grid-cols-[220px_1fr] gap-6 mt-6 items-start">
+      <nav th:replace="~{admin/_layout :: sidebar}"></nav>
+
+      <section class="min-w-0 space-y-5">
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <p class="text-sm text-gray-500"><span th:text="${#lists.size(clases)}"></span> clases registradas</p>
+          <a th:href="@{/admin/clases/nueva}" class="btn-primary !py-2 !px-4 !text-[13px]">+ Nueva clase</a>
+        </div>
+        <div class="card overflow-hidden"><div class="overflow-x-auto"><table class="admin-table">
+          <thead><tr><th>Clase</th><th>Deporte / nivel</th><th>Entrenador</th><th>Cancha</th><th>Fecha y hora</th><th>Cupo</th><th>Precio</th><th>Estado</th><th>Acciones</th></tr></thead>
+          <tbody>
+            <tr th:each="k : ${clases}" th:classappend="${!k.activa} ? 'opacity-60'">
+              <td><p class="font-semibold text-slate-800" th:text="${k.nombre}"></p><p th:if="${k.fecha lt hoy}" class="text-xs text-gray-400">Finalizada</p></td>
+              <td><span th:text="${@fmt.deporte(k.deporte)}"></span><p class="text-xs text-gray-400" th:text="${k.nivel}"></p></td>
+              <td th:text="${k.entrenador.nombre}"></td>
+              <td th:text="${k.cancha != null ? k.cancha.nombre : '—'}"></td>
+              <td><span th:text="${@fmt.fecha(k.fecha, 'dd MMM yyyy')}"></span><p class="text-xs text-gray-400" th:text="${k.horaInicio} + ' - ' + ${k.horaFin}"></p></td>
+              <td><div th:replace="~{admin/_layout :: cupo(${k.inscritos}, ${k.cupoMax})}"></div></td>
+              <td class="font-semibold" th:text="${@fmt.pen(k.precio)}"></td>
+              <td><span th:replace="~{admin/_layout :: activo(${k.activa}, 'Activa', 'Inactiva')}"></span></td>
+              <td><div class="flex gap-1.5">
+                <a th:href="@{/admin/clases/{id}/inscripciones(id=${k.id})}" class="btn-outline !py-1 !px-2.5 !text-xs">Inscritos</a>
+                <a th:href="@{/admin/clases/{id}/editar(id=${k.id})}" class="btn-outline !py-1 !px-2.5 !text-xs">Editar</a>
+                <form th:action="@{/admin/clases/{id}/estado(id=${k.id})}" method="post"><button type="submit" class="!py-1 !px-2.5 !text-xs" th:classappend="${k.activa} ? 'btn-danger' : 'btn-outline'" th:text="${k.activa} ? 'Desactivar' : 'Activar'"></button></form>
+              </div></td>
+            </tr>
+            <tr th:if="${#lists.isEmpty(clases)}"><td colspan="9" class="text-center text-gray-400 py-10">No hay clases registradas.</td></tr>
+          </tbody>
+        </table></div></div>
+      </section>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>
