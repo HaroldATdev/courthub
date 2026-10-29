@@ -10,7 +10,10 @@ Sistema de reservas de canchas deportivas (fútbol, fulbito, pádel, tenis y squ
 | **Controller**| `@Controller` de Spring MVC (formularios, `Model`, redirecciones) + `@RestController` (API REST JSON) |
 | Seguridad     | Spring Security + JWT (cookie HttpOnly para las vistas · header Bearer para la API) + BCrypt    |
 | Base de datos | **PostgreSQL 16** (esquema + datos demo cargados automáticamente por Spring)                   |
-| Despliegue    | Docker + Docker Compose (build multi-etapa con Maven, volumen persistente)                     |
+| Despliegue    | Docker + Docker Compose (local) · **Render** (app + PostgreSQL en producción) · **Vercel** (portada) |
+
+> 🌐 **Aplicación en producción:** <https://courthub-1fwc.onrender.com> (Render, plan gratuito: la primera visita tras 15 min de inactividad tarda ~30 s en despertar).
+> Usuarios demo: `admin` (administrador) · `gdiaz` (cliente) · clave `Password123`. El botón **Continuar con Google** está activo en producción.
 
 ---
 
@@ -85,7 +88,8 @@ Componentes compartidos: `templates/fragments/layout.html` (head, header, footer
 5. **Mis reservas** → la reserva aparece en "Próximas"; cancelarla y mostrar que el bloque se libera; reprogramar otra.
 6. **Clases** → inscribirse a una clase y ver la barra de cupo actualizarse.
 7. **Panel ERP** → cerrar sesión, entrar como `admin`: activar la cuenta recién registrada en *Usuarios*, ver KPIs e ingresos por mes, filtrar reservas y cambiar un estado, crear una cancha y una clase eligiendo deporte y nivel desde las listas cargadas de la BD, exportar CSV.
-8. Cerrar con la **arquitectura**: diagrama MVC (abajo), `docker compose ps` mostrando `db` + `app`, y `GET /api/health`.
+8. **Google** → desde el login pulsar *Continuar con Google* con un Gmail nuevo: la cuenta queda pendiente; activarla como `admin` y volver a entrar con Google.
+9. Cerrar con la **arquitectura** (diagrama MVC, abajo) y el **despliegue**: la app en Render (`courthub-1fwc.onrender.com`), la portada en Vercel y `docker compose ps` para el entorno local.
 
 <!--RUBRICA-NEXT-->
 
@@ -258,11 +262,13 @@ mvn spring-boot:run            # http://localhost:8080
 
 **Capturas de pantalla:** las 16 capturas del flujo, cada una con su explicación para el informe, están en [`docs/capturas/`](docs/capturas/README.md).
 
-**Inicio de sesión con Google (extra):** el botón *Continuar con Google* del login usa OAuth2/OpenID Connect de Spring Security. Google confirma la identidad; si el correo no existe, la cuenta se crea como cliente en estado *pendiente* (misma regla que el registro) y, si está activa, entra con la cookie JWT y la redirección por perfil. Se activa solo con credenciales de Google Cloud Console:
+**Inicio de sesión con Google (extra):** el botón *Continuar con Google* del login usa OAuth2/OpenID Connect de Spring Security (`GoogleOAuthConfig`, `GoogleLoginHandler`, `AuthService.loginConGoogle`). Google confirma la identidad; si el correo no existe, la cuenta se crea como cliente en estado *pendiente* (misma regla que el registro) y, si está activa, entra con la cookie JWT y la redirección por perfil. **Ya está configurado y probado en producción** (`courthub-1fwc.onrender.com`): al entrar con un Gmail nuevo la cuenta queda pendiente, el administrador la activa en *Usuarios* y el siguiente acceso con Google entra directo.
 
-1. En <https://console.cloud.google.com/apis/credentials> crea un *ID de cliente OAuth 2.0* de tipo **Aplicación web**.
-2. Agrega como *URI de redirección autorizado* `http://localhost:8080/login/oauth2/code/google` (y la URL pública de Render, por ejemplo `https://courthub-1fwc.onrender.com/login/oauth2/code/google`).
-3. Define `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (en un archivo `.env` junto a `docker-compose.yml`, o en las variables de Render) y vuelve a levantar la app. Sin esas variables el botón muestra un aviso y todo lo demás funciona igual.
+Cómo se configuró (para reproducirlo en otro entorno):
+
+1. En <https://console.cloud.google.com/apis/credentials> se creó un *ID de cliente OAuth 2.0* de tipo **Aplicación web**, con pantalla de consentimiento en estado *Testing* (solo entran los Gmail agregados como usuarios de prueba).
+2. Orígenes autorizados: `http://localhost:8080` y `https://courthub-1fwc.onrender.com`. URIs de redirección: `http://localhost:8080/login/oauth2/code/google` y `https://courthub-1fwc.onrender.com/login/oauth2/code/google`.
+3. `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` se guardan como variables de entorno del servicio en Render (y, en local, en un archivo `.env` junto a `docker-compose.yml`, excluido de Git). Sin esas variables el botón muestra un aviso y todo lo demás funciona igual. `server.forward-headers-strategy=framework` hace que, detrás del proxy HTTPS de Render, el URI de retorno se construya con la URL pública.
 
 **Flujo para la demo:** registrarse desde el login (probar un DNI y un usuario repetidos) → intentar entrar (mensaje "pendiente de activación") → entrar como `admin` → *Usuarios → filtro Pendiente → Activar* → volver a entrar con la cuenta nueva → crear una cancha y una clase eligiendo deporte y nivel desde las listas cargadas de la BD.
 
@@ -275,9 +281,13 @@ mvn spring-boot:run            # http://localhost:8080
 | Aplicación Spring Boot + base de datos PostgreSQL | **Render** (plan gratuito, despliega el `Dockerfile`) | [`render.yaml`](render.yaml) |
 | Portada/landing del proyecto (estática) con enlaces a la app y al repositorio | **Vercel** | [`vercel.json`](vercel.json) + [`landing/index.html`](landing/index.html) |
 
-1. **Render:** entra a <https://dashboard.render.com> → *New → Blueprint* → selecciona el repositorio. Render lee `render.yaml`, crea la base de datos `courthub-db` y el servicio web `courthub`, inyecta las variables `PG*` y genera `JWT_SECRET`. El primer build tarda unos minutos (compila con Maven). Al terminar, la app queda en `https://courthub-1fwc.onrender.com` (o el nombre que Render asigne) y se puebla sola con los datos demo.
-2. **Vercel:** importa el mismo repositorio en <https://vercel.com/new>; `vercel.json` indica que el sitio es estático y que la carpeta publicada es `landing/`. Si prefieres configurarlo a mano, pon *Root Directory* = `landing` y *Framework Preset* = *Other*.
-3. Edita la constante `APP_URL` al final de `landing/index.html` con la URL real de Render para que los botones "Abrir la aplicación" apunten a tu despliegue.
+**Estado actual:** la aplicación está desplegada en Render en <https://courthub-1fwc.onrender.com> (servicio web `courthub` + base de datos `courthub-db`, creados desde el Blueprint, con el seed demo cargado y el login con Google activo) y la portada está publicada en Vercel desde la carpeta `landing/`. Cada `git push` a `main` redespliega ambos automáticamente.
+
+Cómo se hizo (para reproducirlo):
+
+1. **Render:** <https://dashboard.render.com> → *New → Blueprint* → seleccionar el repositorio. Render lee `render.yaml`, crea la base de datos `courthub-db` y el servicio web `courthub`, inyecta las variables `PG*` y genera `JWT_SECRET`. El primer build tarda unos minutos (compila con Maven). Como el nombre `courthub.onrender.com` ya estaba ocupado, Render asignó `courthub-1fwc`. Las variables de Google se completaron después en *Environment*.
+2. **Vercel:** importar el mismo repositorio en <https://vercel.com/new>; `vercel.json` indica que el sitio es estático y que la carpeta publicada es `landing/` (equivale a *Root Directory* = `landing` y *Framework Preset* = *Other*).
+3. La constante `APP_URL` al final de `landing/index.html` apunta a la URL de Render para que los botones "Abrir la aplicación" lleven al sistema.
 
 > El plan gratuito de Render "duerme" el servicio tras 15 minutos sin tráfico: la primera visita puede tardar unos 30 segundos en despertar.
 
