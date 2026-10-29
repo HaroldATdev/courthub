@@ -69,7 +69,9 @@ body { -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility; 
 .ch-input:focus, .ch-select:focus, .ch-textarea:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(16, 185, 129, .16); }
 
 .input-wrap { position: relative; }
-/* El ícono se inyecta DENTRO de <span data-icon>, por eso se posiciona el span */
+/* El ícono se inyecta DENTRO del <span> (icons.js reemplaza data-icon por el SVG y quita el atributo),
+   por eso se posiciona cualquier <span> hijo directo del contenedor, con o sin data-icon */
+.input-wrap > span,
 .input-wrap > span[data-icon],
 .input-wrap > svg {
   position: absolute; left: .95rem; top: 50%; transform: translateY(-50%);
