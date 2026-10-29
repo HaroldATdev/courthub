@@ -44,6 +44,9 @@ services:
       JWT_SECRET: cambia-esta-clave-en-produccion
       SEED_DEMO: "true"
       TZ: America/Lima
+      # Inicio de sesión con Google (opcional): credenciales OAuth 2.0 de Google Cloud Console
+      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
+      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
     ports:
       - "${APP_PORT:-8080}:8080"   # cambia el puerto del host con APP_PORT=8090 docker compose up
     depends_on:

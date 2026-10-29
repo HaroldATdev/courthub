@@ -7,7 +7,9 @@ import com.courthub.service.CatalogoService;
 import com.courthub.util.Fmt;
 import com.courthub.util.Horarios;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.ModelAttribute;
 
@@ -26,6 +28,13 @@ import java.util.Map;
 public class GlobalModelAttributes {
 
     private final CatalogoService catalogo;
+    private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
+
+    /** TRUE cuando "Continuar con Google" está configurado (GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET). */
+    @ModelAttribute("googleHabilitado")
+    public boolean googleHabilitado() {
+        return clientRegistrations.getIfAvailable() != null;
+    }
 
     @ModelAttribute("usuario")
     public AuthUser usuario(@AuthenticationPrincipal AuthUser usuario) {

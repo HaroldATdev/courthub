@@ -82,6 +82,30 @@ public class AuthService {
         return new AuthResponse(jwt.generar(u), UsuarioDto.de(u));
     }
 
+    /**
+     * Inicio de sesión con Google: la identidad la confirma Google (OpenID Connect).
+     * Si el correo no existe se crea la cuenta como cliente en estado "pendiente" (la activa el
+     * administrador, igual que un registro normal). Solo las cuentas activas pueden entrar.
+     */
+    @Transactional
+    public Usuario loginConGoogle(String email, String nombres, String apellidos) {
+        String correo = email.trim().toLowerCase();
+        Usuario u = usuarios.findByEmailIgnoreCase(correo).orElseGet(() -> {
+            String base = correo.substring(0, correo.indexOf('@')).replaceAll("[^A-Za-z0-9._-]", "");
+            String usuario = base.isEmpty() ? "google" : base;
+            int i = 1;
+            while (usuarios.existsByUsuarioIgnoreCase(usuario)) usuario = base + (++i);
+            return usuarios.save(Usuario.builder()
+                    .usuario(usuario).nombre(nombres.trim()).apellido(apellidos.trim()).email(correo)
+                    .passwordHash(encoder.encode(java.util.UUID.randomUUID().toString())) // sin clave local: entra solo con Google
+                    .rol(AuthUser.CLIENTE).estado(Usuario.PENDIENTE)
+                    .build());
+        });
+        if (Usuario.PENDIENTE.equals(u.getEstado())) throw ApiException.forbidden(MSG_PENDIENTE);
+        if (Usuario.ANULADO.equals(u.getEstado())) throw ApiException.forbidden(MSG_ANULADA);
+        return u;
+    }
+
     @Transactional(readOnly = true)
     public UsuarioDto perfil(Long id) {
         return usuarios.findById(id).map(UsuarioDto::de)

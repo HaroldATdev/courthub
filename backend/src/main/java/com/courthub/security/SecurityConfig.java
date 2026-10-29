@@ -2,6 +2,7 @@ package com.courthub.security;
 
 import com.courthub.service.JwtService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -11,8 +12,7 @@ import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
-import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.LoginUrlAuthenticationEntryPoint;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
@@ -34,6 +34,9 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtService jwtService;
+    private final GoogleLoginHandler googleLoginHandler;
+    /** Presente solo cuando están configuradas GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (ver GoogleOAuthConfig). */
+    private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
 
     @Value("${courthub.cors-origins:*}")
     private String corsOrigins;
@@ -69,6 +72,7 @@ public class SecurityConfig {
                     .accessDeniedPage("/acceso-denegado"))
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/", "/login", "/registro", "/acceso-denegado", "/error",
+                            "/oauth2/**", "/login/oauth2/**",
                             "/css/**", "/js/**", "/img/**", "/favicon.ico").permitAll()
                     .requestMatchers("/admin/**").hasRole("ADMINISTRADOR")
                     .anyRequest().authenticated())
@@ -76,13 +80,17 @@ public class SecurityConfig {
             .httpBasic(b -> b.disable())
             .logout(l -> l.disable()) // el logout lo gestiona AuthViewController (borra la cookie)
             .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
-        return http.build();
-    }
 
-    /** BCrypt — compatible con los hashes generados por pgcrypto en db/seed.sql. */
-    @Bean
-    public PasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder(10);
+        // "Continuar con Google" (OAuth2 / OpenID Connect) solo si hay credenciales configuradas
+        ClientRegistrationRepository registros = clientRegistrations.getIfAvailable();
+        if (registros != null) {
+            http.oauth2Login(o -> o
+                    .clientRegistrationRepository(registros)
+                    .loginPage("/login")
+                    .successHandler(googleLoginHandler)
+                    .failureHandler(googleLoginHandler));
+        }
+        return http.build();
     }
 
     @Bean

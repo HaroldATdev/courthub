@@ -256,6 +256,14 @@ mvn spring-boot:run            # http://localhost:8080
 
 **Modelo de datos del avance:** `usuarios` incorpora `dni` (único), `usuario` (único, sin distinguir mayúsculas) y `estado` (`activo` · `pendiente` · `anulado`, con `CHECK`). Las bases creadas antes se migran solas al arrancar (`DataInitializer.migrarTercerAvance`). Las consultas 17 a 22 de [`consultas-evidencia.sql`](backend/src/main/resources/db/consultas-evidencia.sql) sirven como evidencia.
 
+**Capturas de pantalla:** las 16 capturas del flujo, cada una con su explicación para el informe, están en [`docs/capturas/`](docs/capturas/README.md).
+
+**Inicio de sesión con Google (extra):** el botón *Continuar con Google* del login usa OAuth2/OpenID Connect de Spring Security. Google confirma la identidad; si el correo no existe, la cuenta se crea como cliente en estado *pendiente* (misma regla que el registro) y, si está activa, entra con la cookie JWT y la redirección por perfil. Se activa solo con credenciales de Google Cloud Console:
+
+1. En <https://console.cloud.google.com/apis/credentials> crea un *ID de cliente OAuth 2.0* de tipo **Aplicación web**.
+2. Agrega como *URI de redirección autorizado* `http://localhost:8080/login/oauth2/code/google` (y la URL pública de Render, por ejemplo `https://courthub.onrender.com/login/oauth2/code/google`).
+3. Define `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (en un archivo `.env` junto a `docker-compose.yml`, o en las variables de Render) y vuelve a levantar la app. Sin esas variables el botón muestra un aviso y todo lo demás funciona igual.
+
 **Flujo para la demo:** registrarse desde el login (probar un DNI y un usuario repetidos) → intentar entrar (mensaje "pendiente de activación") → entrar como `admin` → *Usuarios → filtro Pendiente → Activar* → volver a entrar con la cuenta nueva → crear una cancha y una clase eligiendo deporte y nivel desde las listas cargadas de la BD.
 
 ## ☁️ Despliegue en la nube (Render + Vercel)

@@ -76,7 +76,9 @@
               <span class="h-px flex-1 bg-gray-100"></span>
             </div>
             <div class="grid grid-cols-2 gap-3">
-              <button type="button" class="social" data-social="Google"><span data-icon="google" data-cls="w-[18px] h-[18px]"></span>Google</button>
+              <!-- Continuar con Google: enlace real al flujo OAuth2 cuando hay credenciales configuradas -->
+              <a th:if="${googleHabilitado}" th:href="@{/oauth2/authorization/google}" class="social"><span data-icon="google" data-cls="w-[18px] h-[18px]"></span>Google</a>
+              <button th:unless="${googleHabilitado}" type="button" class="social" data-social="Google" title="Configura GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET"><span data-icon="google" data-cls="w-[18px] h-[18px]"></span>Google</button>
               <button type="button" class="social" data-social="Apple"><span data-icon="apple" data-cls="w-[18px] h-[18px]"></span>Apple</button>
             </div>
 
@@ -195,7 +197,11 @@
         });
       });
       document.querySelectorAll('[data-social]').forEach(function (b) {
-        b.addEventListener('click', function () { CH.toast('El acceso con ' + b.dataset.social + ' requiere OAuth. Usa el formulario.', 'info'); });
+        b.addEventListener('click', function () {
+          CH.toast(b.dataset.social === 'Google'
+            ? 'Google no está configurado en este servidor (faltan GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET).'
+            : 'El acceso con ' + b.dataset.social + ' no está disponible. Usa el formulario.', 'info');
+        });
       });
     })();
   </script>
