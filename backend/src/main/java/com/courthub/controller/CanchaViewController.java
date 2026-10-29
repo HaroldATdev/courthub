@@ -2,8 +2,8 @@ package com.courthub.controller;
 
 import com.courthub.dto.CanchaDto;
 import com.courthub.service.CanchaService;
+import com.courthub.service.CatalogoService;
 import com.courthub.service.ReservaService;
-import com.courthub.util.Fmt;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -20,6 +20,7 @@ import java.util.Map;
 public class CanchaViewController {
 
     private final CanchaService canchaService;
+    private final CatalogoService catalogoService;
 
     /** Dashboard: los filtros viajan como parámetros GET y el listado se renderiza en el servidor. */
     @GetMapping("/dashboard")
@@ -30,7 +31,7 @@ public class CanchaViewController {
                             Model model) {
         // Si llegara repetido (?tipo=a&tipo=b) Spring lo une con comas: nos quedamos con el primero válido
         if (tipo.contains(",")) tipo = tipo.split(",")[0];
-        if (!tipo.equals("todos") && !Fmt.DEPORTES.containsKey(tipo)) tipo = "todos";
+        if (!tipo.equals("todos") && !catalogoService.existeDeporte(tipo)) tipo = "todos";
         String precioMin = null, precioMax = null;
         if (!precio.isBlank() && precio.contains("-")) {
             String[] p = precio.split("-");

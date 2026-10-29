@@ -20,9 +20,21 @@ CREATE TABLE IF NOT EXISTS usuarios (
   telefono         VARCHAR(25)  NOT NULL DEFAULT '',
   nivel            VARCHAR(30)  NOT NULL DEFAULT 'Bronce',
   deporte_favorito VARCHAR(50)  NOT NULL DEFAULT 'Multi',
-  activo           BOOLEAN      NOT NULL DEFAULT TRUE,
+  -- Tercer avance: identificación y ciclo de vida de la cuenta
+  dni              VARCHAR(8),                       -- único (validación en el registro)
+  usuario          VARCHAR(50),                      -- nombre de usuario único (validación en el registro)
+  estado           VARCHAR(20)  NOT NULL DEFAULT 'pendiente'
+                   CHECK (estado IN ('activo', 'pendiente', 'anulado')),  -- solo el administrador activa
   fecha_registro   TIMESTAMPTZ  NOT NULL DEFAULT NOW()
 );
+
+-- Migración idempotente para bases creadas antes del tercer avance (la columna "activo" se migra en DataInitializer)
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS dni VARCHAR(8);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS usuario VARCHAR(50);
+ALTER TABLE usuarios ADD COLUMN IF NOT EXISTS estado VARCHAR(20) NOT NULL DEFAULT 'pendiente';
+CREATE UNIQUE INDEX IF NOT EXISTS uq_usuarios_dni ON usuarios (dni) WHERE dni IS NOT NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS uq_usuarios_usuario ON usuarios (LOWER(usuario)) WHERE usuario IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_usuarios_estado ON usuarios (estado);
 
 -- ============================================================
 -- 2) CANCHAS  (fútbol, fulbito, pádel, tenis, squash, etc.)
@@ -127,4 +139,29 @@ CREATE TABLE IF NOT EXISTS inscripciones_clases (
 
 CREATE INDEX IF NOT EXISTS idx_inscripciones_usuario ON inscripciones_clases (usuario_id);
 
+-- ============================================================
+-- 7) DEPORTES — catálogo para las listas desplegables de los CRUD
+--    de canchas y clases (tercer avance). Datos de referencia idempotentes.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS deportes (
+  id      SERIAL PRIMARY KEY,
+  codigo  VARCHAR(30) NOT NULL UNIQUE,   -- valor guardado en canchas.tipo / clases.deporte
+  nombre  VARCHAR(60) NOT NULL,          -- etiqueta mostrada
+  orden   SMALLINT    NOT NULL DEFAULT 0,
+  activo  BOOLEAN     NOT NULL DEFAULT TRUE
+);
+INSERT INTO deportes (codigo, nombre, orden) VALUES
+  ('futbol', 'Fútbol', 1), ('tenis', 'Tenis', 2), ('squash', 'Squash', 3), ('padel', 'Pádel', 4)
+ON CONFLICT (codigo) DO NOTHING;
 
+-- ============================================================
+-- 8) NIVELES DE CLASE — catálogo para la lista desplegable del CRUD de clases
+-- ============================================================
+CREATE TABLE IF NOT EXISTS niveles_clase (
+  id      SERIAL PRIMARY KEY,
+  nombre  VARCHAR(40) NOT NULL UNIQUE,
+  orden   SMALLINT    NOT NULL DEFAULT 0
+);
+INSERT INTO niveles_clase (nombre, orden) VALUES
+  ('Todos los niveles', 1), ('Principiante', 2), ('Intermedio', 3), ('Avanzado', 4)
+ON CONFLICT (nombre) DO NOTHING;

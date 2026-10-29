@@ -174,3 +174,54 @@ SELECT tablename AS tabla, indexname AS indice, indexdef AS definicion
 FROM pg_indexes
 WHERE schemaname = 'public' AND indexname NOT LIKE '%_pkey'
 ORDER BY tablename, indexname;
+
+-- ============================================================
+-- TERCER AVANCE
+-- ============================================================
+\echo '=== 17) Usuarios con DNI, nombre de usuario, perfil y estado (pendiente | activo | anulado) ==='
+SELECT id, dni, usuario, nombre || ' ' || apellido AS nombre_completo, email, rol AS perfil, estado,
+       TO_CHAR(fecha_registro, 'DD/MM/YYYY HH24:MI') AS registrado
+FROM usuarios
+ORDER BY estado, id;
+
+\echo '=== 18) Cuentas pendientes de activación (solo el administrador puede activarlas) ==='
+SELECT dni, usuario, nombre, apellido, rol AS perfil, estado, fecha_registro
+FROM usuarios WHERE estado = 'pendiente' ORDER BY fecha_registro;
+
+\echo '=== 19) Validación del login: busca por usuario O correo y exige estado activo (misma lógica que AuthService) ==='
+SELECT usuario, email, rol, estado,
+       CASE WHEN estado = 'activo' THEN 'puede iniciar sesión' ELSE 'bloqueado: ' || estado END AS acceso
+FROM usuarios
+WHERE LOWER(usuario) = LOWER('gdiaz') OR LOWER(email) = LOWER('gdiaz');
+
+\echo '=== 20) Integridad: DNI y usuario únicos (índices parciales uq_usuarios_dni / uq_usuarios_usuario) — se deshace con ROLLBACK ==='
+BEGIN;
+DO $$
+BEGIN
+  INSERT INTO usuarios (dni, usuario, nombre, apellido, email, password_hash, rol)
+  VALUES ('10000002', 'otro_usuario', 'X', 'X', 'x1@test.com', 'hash', 'cliente');
+  RAISE NOTICE 'ERROR: se permitió un DNI duplicado';
+EXCEPTION WHEN unique_violation THEN
+  RAISE NOTICE 'Integridad OK: DNI 10000002 duplicado rechazado (uq_usuarios_dni)';
+END $$;
+DO $$
+BEGIN
+  INSERT INTO usuarios (dni, usuario, nombre, apellido, email, password_hash, rol)
+  VALUES ('99999999', 'GDIAZ', 'X', 'X', 'x2@test.com', 'hash', 'cliente');
+  RAISE NOTICE 'ERROR: se permitió un usuario duplicado';
+EXCEPTION WHEN unique_violation THEN
+  RAISE NOTICE 'Integridad OK: usuario "GDIAZ" duplicado rechazado (uq_usuarios_usuario, sin distinguir mayúsculas)';
+END $$;
+ROLLBACK;
+
+\echo '=== 21) Catálogos que alimentan las listas desplegables de los CRUD (canchas y clases) ==='
+SELECT id, codigo, nombre, orden, activo FROM deportes ORDER BY orden;
+SELECT id, nombre, orden FROM niveles_clase ORDER BY orden;
+
+\echo '=== 22) Uso del catálogo: canchas y clases por deporte (JOIN con la tabla deportes) ==='
+SELECT d.nombre AS deporte,
+       (SELECT COUNT(*) FROM canchas c WHERE c.tipo = d.codigo AND c.activa) AS canchas_activas,
+       (SELECT COUNT(*) FROM clases k WHERE k.deporte = d.codigo AND k.activa) AS clases_activas
+FROM deportes d
+WHERE d.activo
+ORDER BY d.orden;

@@ -21,7 +21,7 @@ public class AuthApiController {
     private final AuthService service;
 
     @PostMapping("/register")
-    public ResponseEntity<AuthResponse> registrar(@Valid @RequestBody RegisterRequest req) {
+    public ResponseEntity<RegisterResponse> registrar(@Valid @RequestBody RegisterRequest req) {
         return ResponseEntity.status(HttpStatus.CREATED).body(service.registrar(req));
     }
 

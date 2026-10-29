@@ -304,10 +304,13 @@ public class AdminViewController {
        ===================================================================== */
 
     @GetMapping("/usuarios")
-    public String usuarios(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "") String rol, Model model) {
-        model.addAttribute("usuarios", admin.usuarios(q, rol));
+    public String usuarios(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "") String rol,
+                           @RequestParam(defaultValue = "") String estado, HttpServletRequest req, Model model) {
+        model.addAttribute("usuarios", admin.usuarios(q, rol, estado));
         model.addAttribute("q", q);
         model.addAttribute("rol", rol);
+        model.addAttribute("estado", estado);
+        model.addAttribute("volver", req.getQueryString() == null ? "" : req.getQueryString());
         model.addAttribute("seccion", "usuarios");
         return "admin/usuarios";
     }
@@ -333,7 +336,7 @@ public class AdminViewController {
 
     @GetMapping("/usuarios/{id}/editar")
     public String editarUsuario(@PathVariable Long id, Model model) {
-        UsuarioAdminDto u = admin.usuarios("", "").stream().filter(x -> x.id().equals(id)).findFirst()
+        UsuarioAdminDto u = admin.usuarios("", "", "").stream().filter(x -> x.id().equals(id)).findFirst()
                 .orElseThrow(() -> ApiException.notFound("Usuario no encontrado."));
         model.addAttribute("usuarioForm", UsuarioForm.de(u));
         return formUsuario(model, id);
@@ -353,25 +356,28 @@ public class AdminViewController {
         }
     }
 
+    /** Cambio de estado de la cuenta: activo (solo el administrador activa), pendiente o anulado. */
     @PostMapping("/usuarios/{id}/estado")
-    public String estadoUsuario(@AuthenticationPrincipal AuthUser adminUser, @PathVariable Long id, RedirectAttributes ra) {
+    public String estadoUsuario(@AuthenticationPrincipal AuthUser adminUser, @PathVariable Long id,
+                                @RequestParam String estado, @RequestParam(defaultValue = "") String volver, RedirectAttributes ra) {
         try {
-            UsuarioAdminDto u = admin.estadoUsuario(adminUser, id, new EstadoRequest(null, null, null));
-            ra.addFlashAttribute("toast", "Usuario " + (u.activo() ? "activado" : "desactivado") + ".");
+            UsuarioAdminDto u = admin.estadoUsuario(adminUser, id, estado);
+            ra.addFlashAttribute("toast", "Cuenta de " + u.nombre() + " marcada como \"" + estado + "\".");
             ra.addFlashAttribute("toastTipo", "info");
         } catch (ApiException e) {
             ra.addFlashAttribute("toast", e.getMessage());
             ra.addFlashAttribute("toastTipo", "error");
         }
-        return "redirect:/admin/usuarios";
+        return "redirect:/admin/usuarios" + (volver.isBlank() ? "" : "?" + volver);
     }
 
     @GetMapping(value = "/usuarios/exportar", produces = "text/csv")
-    public ResponseEntity<byte[]> exportarUsuarios(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "") String rol) {
-        StringBuilder sb = new StringBuilder("﻿Nombre;Apellido;Email;Rol;Telefono;Nivel;Deporte;Activo;Registro\n");
-        for (UsuarioAdminDto u : admin.usuarios(q, rol)) {
-            sb.append(csv(u.nombre(), u.apellido(), u.email(), u.rol(), u.telefono(), u.nivel(), u.deporte(),
-                    Boolean.TRUE.equals(u.activo()) ? "Sí" : "No", u.fechaRegistro()));
+    public ResponseEntity<byte[]> exportarUsuarios(@RequestParam(defaultValue = "") String q, @RequestParam(defaultValue = "") String rol,
+                                                   @RequestParam(defaultValue = "") String estado) {
+        StringBuilder sb = new StringBuilder("﻿DNI;Usuario;Nombre;Apellido;Email;Perfil;Estado;Telefono;Nivel;Deporte;Registro\n");
+        for (UsuarioAdminDto u : admin.usuarios(q, rol, estado)) {
+            sb.append(csv(u.dni(), u.usuario(), u.nombre(), u.apellido(), u.email(), u.rol(), u.estado(), u.telefono(), u.nivel(),
+                    u.deporte(), u.fechaRegistro()));
         }
         return descarga("usuarios-courthub.csv", sb.toString());
     }

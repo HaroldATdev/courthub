@@ -1,0 +1,63 @@
+# ============================================================
+# CourtHub · render.yaml — Despliegue en la nube con Render (Blueprint)
+#
+# Vercel no ejecuta aplicaciones Java/Spring Boot ni PostgreSQL, por eso la
+# aplicación se despliega en Render (plan gratuito) y Vercel sirve la portada
+# estática del proyecto (carpeta landing/, ver vercel.json).
+#
+# Pasos:
+#   1. Sube el repositorio a GitHub (ya está en github.com/HaroldATdev/courthub).
+#   2. En https://dashboard.render.com → New → Blueprint → elige el repo.
+#      Render lee este archivo y crea la base de datos + el servicio web.
+#   3. Espera el primer build (compila con Maven dentro del Dockerfile, ~5 min).
+#   4. Abre https://courthub.onrender.com (o el nombre que Render asigne).
+#      Usuarios demo: admin / Password123 · gdiaz / Password123
+# ============================================================
+services:
+  - type: web
+    name: courthub
+    runtime: docker
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    plan: free
+    region: oregon
+    healthCheckPath: /api/health
+    autoDeploy: true
+    envVars:
+      # Render inyecta PORT automáticamente; la app lo lee en server.port
+      - key: TZ
+        value: America/Lima
+      - key: SEED_DEMO
+        value: "true"
+      - key: THYMELEAF_CACHE
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PGHOST
+        fromDatabase:
+          name: courthub-db
+          property: host
+      - key: PGPORT
+        fromDatabase:
+          name: courthub-db
+          property: port
+      - key: PGUSER
+        fromDatabase:
+          name: courthub-db
+          property: user
+      - key: PGPASSWORD
+        fromDatabase:
+          name: courthub-db
+          property: password
+      - key: PGDATABASE
+        fromDatabase:
+          name: courthub-db
+          property: database
+
+databases:
+  - name: courthub-db
+    plan: free
+    region: oregon
+    databaseName: courthub
+    user: courthub
+    postgresMajorVersion: "16"

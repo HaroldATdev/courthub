@@ -23,17 +23,23 @@ public final class Formularios {
 
     @Data
     public static class LoginForm {
-        @NotBlank(message = "Ingresa tu correo y contraseña para continuar.") private String email;
-        @NotBlank(message = "Ingresa tu correo y contraseña para continuar.") private String password;
+        @NotBlank(message = "Ingresa tu usuario y contraseña para continuar.") private String usuario; // usuario o correo
+        @NotBlank(message = "Ingresa tu usuario y contraseña para continuar.") private String password;
     }
 
+    /** Registro de usuario (tercer avance): dni, nombres, apellidos, usuario, clave, perfil; estado inicial "pendiente". */
     @Data
     public static class RegistroForm {
-        @NotBlank(message = "Completa todos los campos.") private String nombre;
-        @NotBlank(message = "Completa todos los campos.") @Email(message = "El correo no es válido.") private String email;
-        @NotBlank(message = "Completa todos los campos.") @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres.") private String password;
+        @NotBlank(message = "El DNI es obligatorio.") @Pattern(regexp = "\\d{8}", message = "El DNI debe tener 8 dígitos.") private String dni;
+        @NotBlank(message = "Los nombres son obligatorios.") private String nombres;
+        @NotBlank(message = "Los apellidos son obligatorios.") private String apellidos;
+        @NotBlank(message = "El nombre de usuario es obligatorio.") @Size(min = 3, max = 50, message = "El usuario debe tener entre 3 y 50 caracteres.")
+        @Pattern(regexp = "[A-Za-z0-9._-]+", message = "El usuario solo admite letras, números, punto, guion y guion bajo.") private String usuario;
+        @NotBlank(message = "El correo es obligatorio.") @Email(message = "El correo no es válido.") private String email;
+        @NotBlank(message = "La contraseña es obligatoria.") @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres.") private String password;
         private String password2;
-        private String rol = "cliente";
+        private String rol = "cliente";            // perfil: cliente | administrador
+        private final String estado = "pendiente"; // estado por defecto (solo el administrador activa)
     }
 
     /** Pago y confirmación de reserva. */
@@ -125,25 +131,27 @@ public final class Formularios {
 
     @Data
     public static class UsuarioForm {
+        @NotBlank(message = "El DNI es obligatorio.") @Pattern(regexp = "\\d{8}", message = "El DNI debe tener 8 dígitos.") private String dni;
         @NotBlank(message = "El nombre es obligatorio.") private String nombre;
         private String apellido;
+        @NotBlank(message = "El nombre de usuario es obligatorio.") private String usuario;
         @NotBlank(message = "El correo es obligatorio.") @Email(message = "El correo no es válido.") private String email;
         private String password;
         private String rol = "cliente";
+        private String estado = "pendiente";
         private String telefono;
         private String nivel = "Bronce";
         private String deporteFavorito = "Multi";
-        private boolean activo = true;
 
         public static UsuarioForm de(UsuarioAdminDto u) {
             UsuarioForm f = new UsuarioForm();
-            f.nombre = u.nombre(); f.apellido = u.apellido(); f.email = u.email(); f.rol = u.rol(); f.telefono = u.telefono();
-            f.nivel = u.nivel(); f.deporteFavorito = u.deporte(); f.activo = Boolean.TRUE.equals(u.activo());
+            f.dni = u.dni(); f.usuario = u.usuario(); f.nombre = u.nombre(); f.apellido = u.apellido(); f.email = u.email();
+            f.rol = u.rol(); f.estado = u.estado(); f.telefono = u.telefono(); f.nivel = u.nivel(); f.deporteFavorito = u.deporte();
             return f;
         }
 
         public UsuarioRequest aRequest() {
-            return new UsuarioRequest(nombre, apellido, email, password, rol, telefono, nivel, deporteFavorito, activo);
+            return new UsuarioRequest(dni, nombre, apellido, usuario, email, password, rol, estado, telefono, nivel, deporteFavorito);
         }
     }
 }

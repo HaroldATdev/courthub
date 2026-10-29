@@ -42,6 +42,7 @@ import java.util.*;
 public class AdminService {
 
     private static final Set<String> ROLES = Set.of(AuthUser.CLIENTE, AuthUser.ENTRENADOR, AuthUser.ADMINISTRADOR);
+    private static final Set<String> ESTADOS_USUARIO = Set.of(Usuario.ACTIVO, Usuario.PENDIENTE, Usuario.ANULADO);
     private static final Set<String> ESTADOS_RESERVA = Set.of(Reserva.PENDIENTE, Reserva.CONFIRMADA, Reserva.COMPLETADA, Reserva.CANCELADA);
     private static final Set<String> ESTADOS_INSCRIPCION = Set.of(Inscripcion.INSCRITO, Inscripcion.CANCELADO, Inscripcion.ASISTIO);
 
@@ -52,6 +53,7 @@ public class AdminService {
     private final InscripcionRepository inscripciones;
     private final ClaseService claseService;
     private final PasswordEncoder encoder;
+    private final CatalogoService catalogo;
 
     /* =====================================================================
        DASHBOARD — indicadores y reportes
@@ -76,7 +78,8 @@ public class AdminService {
         kpis.put("reservasMes", reservas.countByFechaBetweenAndEstadoNot(inicioMes, finMes, Reserva.CANCELADA));
         kpis.put("reservasHoy", reservasHoy);
         kpis.put("ocupacionHoy", ocupacionHoy);
-        kpis.put("usuariosActivos", usuarios.countByActivoTrue());
+        kpis.put("usuariosActivos", usuarios.countByEstado(Usuario.ACTIVO));
+        kpis.put("usuariosPendientes", usuarios.countByEstado(Usuario.PENDIENTE));
         kpis.put("canchasActivas", canchasActivas);
         kpis.put("clasesProximas", clases.countByActivaTrueAndFechaGreaterThanEqual(hoy));
         kpis.put("inscripcionesActivas", inscripciones.countByEstado(Inscripcion.INSCRITO));
@@ -140,17 +143,18 @@ public class AdminService {
        ===================================================================== */
 
     @Transactional(readOnly = true)
-    public List<UsuarioAdminDto> usuarios(String q, String rol) {
+    public List<UsuarioAdminDto> usuarios(String q, String rol, String estado) {
         String qF = q == null ? "" : q.trim().toLowerCase();
         return usuarios.findAllByOrderByFechaRegistroDesc().stream()
                 .filter(u -> rol == null || rol.isBlank() || "todos".equals(rol) || rol.equals(u.getRol()))
-                .filter(u -> qF.isEmpty() || (u.nombreCompleto() + " " + u.getEmail()).toLowerCase().contains(qF))
+                .filter(u -> estado == null || estado.isBlank() || "todos".equals(estado) || estado.equals(u.getEstado()))
+                .filter(u -> qF.isEmpty() || (u.nombreCompleto() + " " + u.getEmail() + " " + u.getUsuario() + " " + u.getDni()).toLowerCase().contains(qF))
                 .map(UsuarioAdminDto::de).toList();
     }
 
     @Transactional(readOnly = true)
     public List<UsuarioAdminDto> entrenadores() {
-        return usuarios.findByRolAndActivoTrueOrderByNombreAsc(AuthUser.ENTRENADOR).stream().map(UsuarioAdminDto::de).toList();
+        return usuarios.findByRolAndEstadoOrderByNombreAsc(AuthUser.ENTRENADOR, Usuario.ACTIVO).stream().map(UsuarioAdminDto::de).toList();
     }
 
     @Transactional
@@ -158,11 +162,9 @@ public class AdminService {
         if (req.password() == null || req.password().length() < 6) {
             throw ApiException.badRequest("La contraseña debe tener al menos 6 caracteres.");
         }
-        String email = req.email().trim().toLowerCase();
-        if (usuarios.existsByEmailIgnoreCase(email)) throw ApiException.conflict("Ya existe una cuenta con ese correo.");
         Usuario u = new Usuario();
+        validarUnicos(u, req);
         aplicar(u, req);
-        u.setEmail(email);
         u.setPasswordHash(encoder.encode(req.password()));
         return UsuarioAdminDto.de(usuarios.save(u));
     }
@@ -170,12 +172,8 @@ public class AdminService {
     @Transactional
     public UsuarioAdminDto actualizarUsuario(Long id, UsuarioRequest req) {
         Usuario u = buscarUsuario(id);
-        String email = req.email().trim().toLowerCase();
-        if (!email.equalsIgnoreCase(u.getEmail()) && usuarios.existsByEmailIgnoreCase(email)) {
-            throw ApiException.conflict("Ya existe una cuenta con ese correo.");
-        }
+        validarUnicos(u, req);
         aplicar(u, req);
-        u.setEmail(email);
         if (req.password() != null && !req.password().isBlank()) {
             if (req.password().length() < 6) throw ApiException.badRequest("La contraseña debe tener al menos 6 caracteres.");
             u.setPasswordHash(encoder.encode(req.password()));
@@ -183,31 +181,56 @@ public class AdminService {
         return UsuarioAdminDto.de(usuarios.save(u));
     }
 
+    /** Cambio de estado de la cuenta (activo | pendiente | anulado). Solo el administrador puede activar. */
     @Transactional
-    public UsuarioAdminDto estadoUsuario(AuthUser admin, Long id, EstadoRequest req) {
+    public UsuarioAdminDto estadoUsuario(AuthUser admin, Long id, String estado) {
+        if (estado == null || !ESTADOS_USUARIO.contains(estado)) {
+            throw ApiException.badRequest("Estado inválido. Usa: activo, pendiente o anulado.");
+        }
         Usuario u = buscarUsuario(id);
-        if (u.getId().equals(admin.id())) throw ApiException.badRequest("No puedes desactivar tu propia cuenta.");
-        u.setActivo(req.activo() == null ? !u.getActivo() : req.activo());
+        if (u.getId().equals(admin.id()) && !Usuario.ACTIVO.equals(estado)) {
+            throw ApiException.badRequest("No puedes anular ni dejar pendiente tu propia cuenta.");
+        }
+        u.setEstado(estado);
         return UsuarioAdminDto.de(usuarios.save(u));
     }
 
-    /** Eliminación lógica: se conserva el historial de reservas del usuario. */
+    /** Eliminación lógica (estado "anulado"): se conserva el historial de reservas del usuario. */
     @Transactional
     public void eliminarUsuario(AuthUser admin, Long id) {
         Usuario u = buscarUsuario(id);
         if (u.getId().equals(admin.id())) throw ApiException.badRequest("No puedes eliminar tu propia cuenta.");
-        u.setActivo(false);
+        u.setEstado(Usuario.ANULADO);
         usuarios.save(u);
     }
 
+    /** Validaciones de unicidad del tercer avance: DNI, nombre de usuario y correo. */
+    private void validarUnicos(Usuario u, UsuarioRequest req) {
+        String dni = req.dni().trim();
+        String usuario = req.usuario().trim();
+        String email = req.email().trim().toLowerCase();
+        if (!dni.equals(u.getDni()) && usuarios.existsByDni(dni)) {
+            throw ApiException.conflict("El DNI " + dni + " ya está registrado.");
+        }
+        if (!usuario.equalsIgnoreCase(u.getUsuario()) && usuarios.existsByUsuarioIgnoreCase(usuario)) {
+            throw ApiException.conflict("El nombre de usuario \"" + usuario + "\" ya está en uso.");
+        }
+        if (!email.equalsIgnoreCase(u.getEmail()) && usuarios.existsByEmailIgnoreCase(email)) {
+            throw ApiException.conflict("Ya existe una cuenta con ese correo.");
+        }
+    }
+
     private void aplicar(Usuario u, UsuarioRequest req) {
+        u.setDni(req.dni().trim());
+        u.setUsuario(req.usuario().trim());
         u.setNombre(req.nombre().trim());
         u.setApellido(req.apellido() == null ? "" : req.apellido().trim());
+        u.setEmail(req.email().trim().toLowerCase());
         u.setRol(ROLES.contains(req.rol()) ? req.rol() : AuthUser.CLIENTE);
+        u.setEstado(ESTADOS_USUARIO.contains(req.estado()) ? req.estado() : Usuario.PENDIENTE);
         u.setTelefono(req.telefono() == null ? "" : req.telefono().trim());
         u.setNivel(req.nivel() == null || req.nivel().isBlank() ? "Bronce" : req.nivel().trim());
         u.setDeporteFavorito(req.deporteFavorito() == null || req.deporteFavorito().isBlank() ? "Multi" : req.deporteFavorito().trim());
-        if (req.activo() != null) u.setActivo(req.activo());
     }
 
     private Usuario buscarUsuario(Long id) {
@@ -246,8 +269,10 @@ public class AdminService {
 
     private void aplicar(Cancha c, CanchaRequest req) {
         if (req.precioHora().signum() <= 0) throw ApiException.badRequest("El precio por hora debe ser mayor a 0.");
+        String tipo = req.tipo().trim().toLowerCase();
+        if (!catalogo.existeDeporte(tipo)) throw ApiException.badRequest("El deporte seleccionado no existe en el catálogo.");
         c.setNombre(req.nombre().trim());
-        c.setTipo(req.tipo().trim().toLowerCase());
+        c.setTipo(tipo);
         c.setSubtipo(nvl(req.subtipo()));
         c.setDescripcion(nvl(req.descripcion()));
         c.setDireccion(nvl(req.direccion()));
@@ -359,7 +384,7 @@ public class AdminService {
 
     private void aplicar(Clase k, ClaseRequest req) {
         Usuario entrenador = usuarios.findById(req.entrenadorId())
-                .filter(u -> AuthUser.ENTRENADOR.equals(u.getRol()) || AuthUser.ADMINISTRADOR.equals(u.getRol()))
+                .filter(u -> (AuthUser.ENTRENADOR.equals(u.getRol()) || AuthUser.ADMINISTRADOR.equals(u.getRol())) && u.estaActivo())
                 .orElseThrow(() -> ApiException.badRequest("El entrenador seleccionado no existe o no tiene rol de entrenador."));
         LocalDate fecha = Horarios.parseFecha(req.fecha(), "Fecha inválida (usa yyyy-mm-dd).");
         LocalTime inicio = Horarios.parseHora(req.horaInicio(), "Hora de inicio inválida (usa HH:mm).");
@@ -371,9 +396,13 @@ public class AdminService {
             long inscritos = inscripciones.countByClaseIdAndEstado(k.getId(), Inscripcion.INSCRITO);
             if (cupo < inscritos) throw ApiException.badRequest("El cupo no puede ser menor que los inscritos actuales (" + inscritos + ").");
         }
+        String deporte = req.deporte().trim().toLowerCase();
+        if (!catalogo.existeDeporte(deporte)) throw ApiException.badRequest("El deporte seleccionado no existe en el catálogo.");
+        String nivel = req.nivel() == null || req.nivel().isBlank() ? "Todos los niveles" : req.nivel().trim();
+        if (!catalogo.existeNivel(nivel)) throw ApiException.badRequest("El nivel seleccionado no existe en el catálogo.");
         k.setNombre(req.nombre().trim());
-        k.setDeporte(req.deporte().trim().toLowerCase());
-        k.setNivel(req.nivel() == null || req.nivel().isBlank() ? "Todos los niveles" : req.nivel().trim());
+        k.setDeporte(deporte);
+        k.setNivel(nivel);
         k.setDescripcion(nvl(req.descripcion()));
         k.setEntrenador(entrenador);
         k.setCancha(req.canchaId() == null ? null : buscarCancha(req.canchaId()));

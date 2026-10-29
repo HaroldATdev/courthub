@@ -78,13 +78,13 @@ Componentes compartidos: `templates/fragments/layout.html` (head, header, footer
 
 ### 6️⃣ Exposición — guion de demostración sugerido (≈6 min)
 
-1. **Login** (`demo@courthub.com` / `Password123`) → formulario POST, cookie `CH_TOKEN` (JWT) y redirección al dashboard.
+1. **Login** (usuario `gdiaz` / `Password123`) → formulario POST validado contra la BD, cookie `CH_TOKEN` (JWT) y redirección por perfil (cliente → dashboard, administrador → panel ERP). Mostrar el enlace **Regístrate aquí** y las validaciones de DNI/usuario repetidos.
 2. **Dashboard** → filtrar por deporte, distrito y rango de precio; explicar que el `@Controller` consulta el servicio y Thymeleaf renderiza con `th:each`.
 3. **Detalle de cancha** → elegir fecha en el calendario y un bloque libre (mostrar uno ocupado).
 4. **Pago** → completar tarjeta (se formatea sola) → confirmar → ver totales calculados (subtotal + 10 %).
 5. **Mis reservas** → la reserva aparece en "Próximas"; cancelarla y mostrar que el bloque se libera; reprogramar otra.
 6. **Clases** → inscribirse a una clase y ver la barra de cupo actualizarse.
-7. **Panel ERP** → cerrar sesión, entrar como `admin@courthub.com`: ver KPIs e ingresos por mes, filtrar reservas y cambiar un estado, crear una cancha y una clase, revisar inscripciones y usuarios, exportar CSV.
+7. **Panel ERP** → cerrar sesión, entrar como `admin`: activar la cuenta recién registrada en *Usuarios*, ver KPIs e ingresos por mes, filtrar reservas y cambiar un estado, crear una cancha y una clase eligiendo deporte y nivel desde las listas cargadas de la BD, exportar CSV.
 8. Cerrar con la **arquitectura**: diagrama MVC (abajo), `docker compose ps` mostrando `db` + `app`, y `GET /api/health`.
 
 <!--RUBRICA-NEXT-->
@@ -126,9 +126,9 @@ courthub/
 │   └── src/main/
 │       ├── java/com/courthub/
 │       │   ├── CourtHubApplication.java
-│       │   ├── model/        Usuario · Cancha · Reserva · Clase · Inscripcion        (M)
+│       │   ├── model/        Usuario · Cancha · Reserva · Clase · Inscripcion · Deporte · NivelClase (M)
 │       │   ├── repository/   *Repository (Spring Data JPA)                            (M)
-│       │   ├── service/      Auth · Cancha · Reserva · Clase · Admin · Jwt            (M)
+│       │   ├── service/      Auth · Cancha · Reserva · Clase · Admin · Catalogo · Jwt (M)
 │       │   ├── dto/          DTOs de la API + dto/form (objetos de formulario)
 │       │   ├── controller/   AuthView · CanchaView · ReservaView · ClaseView · AdminView (C)
 │       │   │   └── api/      AuthApi · CanchaApi · ReservaApi · ClaseApi · AdminApi · HealthApi
@@ -138,13 +138,16 @@ courthub/
 │       │   └── util/         Horarios (bloques 1.5 h) · Fmt (formato para vistas)
 │       └── resources/
 │           ├── application.yml
-│           ├── db/schema.sql · db/seed.sql
+│           ├── db/schema.sql · db/seed.sql · db/consultas-evidencia.sql
 │           ├── templates/                      # VISTAS (V)
 │           │   ├── fragments/layout.html       # head · header · footer · scripts
 │           │   ├── index.html · dashboard.html · cancha-detalle.html · pago.html · mis-reservas.html · clases.html · error.html
 │           │   └── admin/  _layout.html · resumen.html · reservas.html · canchas.html · cancha-form.html
 │           │              clases.html · clase-form.html · clase-inscripciones.html · inscripciones.html · usuarios.html · usuario-form.html
 │           └── static/css/styles.css · static/js/{icons,ui,api}.js
+├── landing/index.html                        # Portada estática publicada en Vercel
+├── render.yaml                               # Despliegue de app + BD en Render
+├── vercel.json                               # Configuración del sitio estático en Vercel
 ├── docker-compose.yml                        # db (PostgreSQL) + app (Spring Boot)
 └── README.md
 ```
@@ -168,13 +171,17 @@ docker compose up --build
 
 El primer arranque tarda unos minutos (Maven descarga dependencias). La base de datos se crea y puebla sola la **primera vez**.
 
+> Si el puerto 8080 está ocupado en tu máquina: `APP_PORT=8090 docker compose up --build` (PowerShell: `$env:APP_PORT=8090; docker compose up --build`) y abre http://localhost:8090.
+
 ### 👤 Cuentas de demostración (contraseña: `Password123`)
 
-| Correo                    | Rol           | Nota                                          |
-|---------------------------|---------------|-----------------------------------------------|
-| `demo@courthub.com`       | Cliente       | Usuario con historial de reservas             |
-| `entrenador@courthub.com` | Entrenador    | Carla Rojas — dicta clases                    |
-| `admin@courthub.com`      | Administrador | Entra directo al **panel ERP** (`/admin`)     |
+| Usuario   | Correo                    | Perfil        | Estado | Nota                                          |
+|-----------|---------------------------|---------------|--------|-----------------------------------------------|
+| `gdiaz`   | `demo@courthub.com`       | Cliente       | activo | Usuario con historial de reservas             |
+| `crojas`  | `entrenador@courthub.com` | Entrenador    | activo | Carla Rojas — dicta clases                    |
+| `admin`   | `admin@courthub.com`      | Administrador | activo | Entra directo al **panel ERP** (`/admin`)     |
+
+> El login acepta el **nombre de usuario o el correo**. Las cuentas que se registran desde el login nacen en estado **pendiente** y solo pueden entrar cuando el administrador las activa en *Administración → Usuarios*.
 
 ---
 
@@ -219,7 +226,8 @@ mvn spring-boot:run            # http://localhost:8080
 | Método | Ruta                                       | Descripción                                   |
 |--------|--------------------------------------------|-----------------------------------------------|
 | GET    | `/api/health`                              | Estado de la aplicación                       |
-| POST   | `/api/auth/register` · `/api/auth/login`   | Registro / login → devuelve **JWT**           |
+| POST   | `/api/auth/register`                       | Registro (dni, nombre, apellido, usuario, email, password, rol) → cuenta **pendiente** |
+| POST   | `/api/auth/login`                          | Login por `usuario` (nombre de usuario o correo) + `password` → **JWT** (solo cuentas activas) |
 | GET    | `/api/auth/me`                             | Perfil del usuario autenticado 🔒             |
 | GET    | `/api/canchas?tipo=&q=&comuna=&precioMin=&precioMax=` | Listado de canchas con filtros 🔒  |
 | GET    | `/api/canchas/{id}` · `/api/canchas/{id}/disponibilidad?fecha=` | Detalle y bloques libres 🔒 |
@@ -233,6 +241,37 @@ mvn spring-boot:run            # http://localhost:8080
 🔒 = requiere sesión (cookie en las vistas · `Authorization: Bearer <token>` en la API) · 🔐 = además exige rol administrador
 
 ---
+
+## 🎓 Tercer avance — acceso, registro, perfiles y catálogos
+
+| # | Requisito | Implementación | Dónde |
+|---|-----------|----------------|-------|
+| 1 | **Página de acceso** que valida usuario y clave con la BD | Formulario `POST /login`; `AuthService.login` busca por **usuario o correo** (`UsuarioRepository.findByUsuarioOEmail`), compara el hash BCrypt y exige estado `activo` | `templates/index.html`, `AuthViewController`, `AuthService` |
+| 2 | **Enlace de registro** al pie del login con *dni, nombres, apellidos, usuario, clave, perfil, estado* | El enlace "¿No tienes una cuenta? Regístrate aquí" abre el formulario `POST /registro`. Perfil: `cliente` o `administrador`. Estado por defecto **pendiente** (campo de solo lectura); solo el administrador puede pasarlo a `activo`; también existe `anulado` | `templates/index.html`, `Formularios.RegistroForm`, `AuthService.registrar` |
+| 2a | Validación por **DNI** repetido | `usuarios.existsByDni` → "El DNI … ya está registrado" + índice único parcial `uq_usuarios_dni` en la BD | `AuthService`, `db/schema.sql` |
+| 2b | Validación por **usuario** repetido | `usuarios.existsByUsuarioIgnoreCase` → "El nombre de usuario … ya está en uso" + índice único `uq_usuarios_usuario (LOWER(usuario))` | `AuthService`, `db/schema.sql` |
+| 3 | **Redirección según perfil** al iniciar sesión | `administrador` → `/admin` (panel ERP) · `cliente`/`entrenador` → `/dashboard`. Las cuentas `pendiente` o `anulado` reciben un mensaje y no entran | `AuthViewController.iniciarSesion` |
+| 4 | **CRUD de usuarios** en el perfil administrador | Listado con filtros por perfil, estado y búsqueda (DNI, usuario, nombre, correo); crear, editar (formulario `th:object`), cambiar estado (**Activar / Pendiente / Anular**) y exportar CSV, con las mismas validaciones de DNI/usuario únicos | `/admin/usuarios`, `AdminViewController`, `AdminService` |
+| 5 | **Listas desplegables desde tablas de la BD** en los dos CRUD del 2.º avance | Tabla `deportes` → select *Deporte* en **canchas** y **clases**; tabla `niveles_clase` → select *Nivel* en **clases**. Se cargan en `GlobalModelAttributes` vía `CatalogoService` y el servicio rechaza valores que no existan en el catálogo | `db/schema.sql`, `model/Deporte`, `model/NivelClase`, `admin/cancha-form.html`, `admin/clase-form.html` |
+
+**Modelo de datos del avance:** `usuarios` incorpora `dni` (único), `usuario` (único, sin distinguir mayúsculas) y `estado` (`activo` · `pendiente` · `anulado`, con `CHECK`). Las bases creadas antes se migran solas al arrancar (`DataInitializer.migrarTercerAvance`). Las consultas 17 a 22 de [`consultas-evidencia.sql`](backend/src/main/resources/db/consultas-evidencia.sql) sirven como evidencia.
+
+**Flujo para la demo:** registrarse desde el login (probar un DNI y un usuario repetidos) → intentar entrar (mensaje "pendiente de activación") → entrar como `admin` → *Usuarios → filtro Pendiente → Activar* → volver a entrar con la cuenta nueva → crear una cancha y una clase eligiendo deporte y nivel desde las listas cargadas de la BD.
+
+## ☁️ Despliegue en la nube (Render + Vercel)
+
+**Vercel no puede ejecutar la aplicación** (no soporta Java/Spring Boot ni PostgreSQL), así que el despliegue se divide en dos:
+
+| Qué | Dónde | Archivo |
+|-----|-------|---------|
+| Aplicación Spring Boot + base de datos PostgreSQL | **Render** (plan gratuito, despliega el `Dockerfile`) | [`render.yaml`](render.yaml) |
+| Portada/landing del proyecto (estática) con enlaces a la app y al repositorio | **Vercel** | [`vercel.json`](vercel.json) + [`landing/index.html`](landing/index.html) |
+
+1. **Render:** entra a <https://dashboard.render.com> → *New → Blueprint* → selecciona el repositorio. Render lee `render.yaml`, crea la base de datos `courthub-db` y el servicio web `courthub`, inyecta las variables `PG*` y genera `JWT_SECRET`. El primer build tarda unos minutos (compila con Maven). Al terminar, la app queda en `https://courthub.onrender.com` (o el nombre que Render asigne) y se puebla sola con los datos demo.
+2. **Vercel:** importa el mismo repositorio en <https://vercel.com/new>; `vercel.json` indica que el sitio es estático y que la carpeta publicada es `landing/`. Si prefieres configurarlo a mano, pon *Root Directory* = `landing` y *Framework Preset* = *Other*.
+3. Edita la constante `APP_URL` al final de `landing/index.html` con la URL real de Render para que los botones "Abrir la aplicación" apunten a tu despliegue.
+
+> El plan gratuito de Render "duerme" el servicio tras 15 minutos sin tráfico: la primera visita puede tardar unos 30 segundos en despertar.
 
 ## 🗄️ Consultas SQL de evidencia
 

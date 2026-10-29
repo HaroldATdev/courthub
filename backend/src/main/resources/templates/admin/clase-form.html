@@ -19,13 +19,15 @@
 
           <div class="grid sm:grid-cols-2 gap-4">
             <div class="sm:col-span-2"><label class="ch-label">Nombre de la clase</label><input type="text" th:field="*{nombre}" class="ch-input ch-input-plain" placeholder="Pádel Inicial: Golpes Básicos"></div>
-            <div><label class="ch-label">Deporte</label>
+            <div><label class="ch-label">Deporte <span class="text-[10px] text-gray-400 font-normal">(tabla deportes)</span></label>
               <select th:field="*{deporte}" class="ch-select !w-full !py-2.5">
-                <option th:each="d : ${deportes}" th:if="${d.key != 'todos'}" th:value="${d.key}" th:text="${d.value}"></option>
+                <!-- Lista desplegable cargada desde la tabla "deportes" (tercer avance, punto 5) -->
+                <option th:each="d : ${deportesDb}" th:value="${d.codigo}" th:text="${d.nombre}"></option>
               </select></div>
-            <div><label class="ch-label">Nivel</label>
+            <div><label class="ch-label">Nivel <span class="text-[10px] text-gray-400 font-normal">(tabla niveles_clase)</span></label>
+              <!-- Lista desplegable cargada desde la tabla "niveles_clase" (tercer avance, punto 5) -->
               <select th:field="*{nivel}" class="ch-select !w-full !py-2.5">
-                <option th:each="n : ${ {'Todos los niveles','Principiante','Intermedio','Avanzado'} }" th:value="${n}" th:text="${n}"></option>
+                <option th:each="n : ${niveles}" th:value="${n.nombre}" th:text="${n.nombre}"></option>
               </select></div>
             <div><label class="ch-label">Entrenador</label>
               <select th:field="*{entrenadorId}" class="ch-select !w-full !py-2.5">

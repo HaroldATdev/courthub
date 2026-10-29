@@ -19,6 +19,12 @@ import java.util.Map;
 @Component("fmt")
 public class Fmt {
 
+    private final com.courthub.service.CatalogoService catalogo;
+
+    public Fmt(com.courthub.service.CatalogoService catalogo) {
+        this.catalogo = catalogo;
+    }
+
     public static final Locale ES_PE = Locale.forLanguageTag("es-PE");
 
     public static final Map<String, String> DEPORTES = Map.of(
@@ -74,8 +80,14 @@ public class Fmt {
         return cap(ym.format(DateTimeFormatter.ofPattern("MMM yy", ES_PE))).replace(".", "");
     }
 
+    /** Nombre del deporte según la tabla "deportes" (con respaldo en el mapa estático). */
     public String deporte(String clave) {
-        return DEPORTES.getOrDefault(clave, cap(clave));
+        if (clave == null) return "";
+        try {
+            return catalogo.nombreDeporte(clave);
+        } catch (Exception e) {
+            return DEPORTES.getOrDefault(clave, cap(clave));
+        }
     }
 
     public String cap(String s) {

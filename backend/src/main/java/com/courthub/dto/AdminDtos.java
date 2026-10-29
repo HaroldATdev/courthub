@@ -6,6 +6,7 @@ import com.courthub.model.Usuario;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -17,19 +18,24 @@ public final class AdminDtos {
 
     /* ---------------- Usuarios ---------------- */
 
-    public record UsuarioRequest(@NotBlank(message = "El nombre es obligatorio.") String nombre,
+    /** Alta/edición de usuarios desde el CRUD del administrador (dni, nombres, apellidos, usuario, clave, perfil, estado). */
+    public record UsuarioRequest(@NotBlank(message = "El DNI es obligatorio.")
+                                 @Pattern(regexp = "\\d{8}", message = "El DNI debe tener 8 dígitos.") String dni,
+                                 @NotBlank(message = "El nombre es obligatorio.") String nombre,
                                  String apellido,
+                                 @NotBlank(message = "El nombre de usuario es obligatorio.") String usuario,
                                  @NotBlank(message = "El correo es obligatorio.") @Email(message = "El correo no es válido.") String email,
                                  String password,          // obligatorio al crear, opcional al editar
-                                 String rol, String telefono, String nivel, String deporteFavorito, Boolean activo) {}
+                                 String rol, String estado, String telefono, String nivel, String deporteFavorito) {}
 
-    public record UsuarioAdminDto(Long id, String nombre, String apellido, String email, String rol, String telefono,
-                                  String nivel, String deporte, Boolean activo, String fechaRegistro) {
+    public record UsuarioAdminDto(Long id, String dni, String usuario, String nombre, String apellido, String email, String rol,
+                                  String estado, String telefono, String nivel, String deporte, String fechaRegistro) {
         public static UsuarioAdminDto de(Usuario u) {
-            return new UsuarioAdminDto(u.getId(), u.getNombre(), u.getApellido(), u.getEmail(), u.getRol(), u.getTelefono(),
-                    u.getNivel(), u.getDeporteFavorito(), u.getActivo(),
+            return new UsuarioAdminDto(u.getId(), u.getDni(), u.getUsuario(), u.getNombre(), u.getApellido(), u.getEmail(), u.getRol(),
+                    u.getEstado(), u.getTelefono(), u.getNivel(), u.getDeporteFavorito(),
                     u.getFechaRegistro() == null ? null : u.getFechaRegistro().toString());
         }
+        public boolean activo() { return Usuario.ACTIVO.equals(estado); }
     }
 
     /* ---------------- Canchas ---------------- */

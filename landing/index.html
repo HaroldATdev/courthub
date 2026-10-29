@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<!-- ============================================================
+     CourtHub · landing/index.html — Portada estática del proyecto (se publica en Vercel)
+     La aplicación Spring Boot + PostgreSQL corre en Render (ver render.yaml):
+     cambia APP_URL por la URL que Render te asigne.
+     ============================================================ -->
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CourtHub — Sistema de reservas de canchas deportivas</title>
+  <meta name="description" content="Proyecto final del curso Marcos de Desarrollo Web: sistema MVC con Spring Boot, Thymeleaf y PostgreSQL para reservar canchas deportivas en Lima.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%2310b981'/%3E%3Crect x='4.5' y='6.5' width='15' height='11' rx='2' fill='none' stroke='white' stroke-width='1.8'/%3E%3Cline x1='12' y1='6.5' x2='12' y2='17.5' stroke='white' stroke-width='1.8'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Poppins:wght@600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { --primary: #10b981; --primary-dark: #059669; --ink: #0f172a; --muted: #64748b; --bg: #f6f7f7; --card: #ffffff; --line: #e5e7eb; }
+    @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ink: #e2e8f0; --muted: #94a3b8; --bg: #0b1220; --card: #111a2b; --line: #1e293b; } }
+    :root[data-theme="dark"] { --ink: #e2e8f0; --muted: #94a3b8; --bg: #0b1220; --card: #111a2b; --line: #1e293b; }
+    * { box-sizing: border-box; }
+    body { margin: 0; font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--ink); -webkit-font-smoothing: antialiased; }
+    .wrap { max-width: 1080px; margin: 0 auto; padding: 0 16px; }
+    header { display: flex; align-items: center; justify-content: space-between; height: 64px; }
+    .logo { display: flex; align-items: center; gap: 10px; font-family: Poppins, sans-serif; font-weight: 700; font-size: 21px; }
+    .logo span { width: 36px; height: 36px; border-radius: 10px; background: var(--primary); display: grid; place-items: center; color: #fff; }
+    .btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 20px; border-radius: 12px; font-weight: 600; text-decoration: none; font-size: 15px; transition: .15s; }
+    .btn-primary { background: var(--primary); color: #fff; box-shadow: 0 8px 20px -8px rgba(16,185,129,.6); }
+    .btn-primary:hover { background: var(--primary-dark); }
+    .btn-outline { border: 1px solid var(--line); color: var(--ink); background: var(--card); }
+    .hero { padding: 72px 0 48px; display: grid; gap: 40px; grid-template-columns: 1fr; align-items: center; }
+    @media (min-width: 900px) { .hero { grid-template-columns: 1.1fr .9fr; } }
+    .eyebrow { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--primary-dark); }
+    h1 { font-family: Poppins, sans-serif; font-size: clamp(34px, 5vw, 56px); line-height: 1.08; margin: 12px 0 18px; }
+    .lead { font-size: 18px; color: var(--muted); line-height: 1.6; max-width: 560px; }
+    .actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+    .shot { border-radius: 20px; overflow: hidden; border: 1px solid var(--line); background: var(--card); box-shadow: 0 24px 60px -30px rgba(15,23,42,.35); }
+    .shot img { display: block; width: 100%; height: auto; }
+    .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); margin: 24px 0 56px; }
+    .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 22px; }
+    .card h3 { margin: 10px 0 6px; font-family: Poppins, sans-serif; font-size: 17px; }
+    .card p { margin: 0; color: var(--muted); font-size: 14px; line-height: 1.55; }
+    .pill { display: inline-block; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; background: rgba(16,185,129,.12); color: var(--primary-dark); }
+    h2 { font-family: Poppins, sans-serif; font-size: 26px; margin: 48px 0 6px; }
+    .sub { color: var(--muted); margin: 0 0 8px; }
+    table { width: 100%; border-collapse: collapse; background: var(--card); border: 1px solid var(--line); border-radius: 14px; overflow: hidden; font-size: 14px; }
+    th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--line); }
+    th { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+    tr:last-child td { border-bottom: none; }
+    code { background: rgba(100,116,139,.12); padding: 2px 6px; border-radius: 6px; font-size: 13px; }
+    footer { padding: 40px 0; color: var(--muted); font-size: 14px; border-top: 1px solid var(--line); margin-top: 48px; }
+    .arch { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; overflow-x: auto; font-size: 13px; line-height: 1.5; white-space: pre; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink); }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo"><span>▣</span>CourtHub</div>
+      <nav style="display:flex;gap:10px">
+        <a class="btn btn-outline" href="https://github.com/HaroldATdev/courthub" target="_blank" rel="noopener">Código en GitHub</a>
+        <a class="btn btn-primary" data-app href="#">Abrir la aplicación →</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div>
+        <p class="eyebrow">Proyecto final · Marcos de Desarrollo Web</p>
+        <h1>Reserva tu cancha en minutos</h1>
+        <p class="lead">Sistema web MVC para la gestión de canchas deportivas en Lima: reservas con bloques horarios, pago, clases con cupos y un panel ERP para la administración. Construido con Java 21, Spring Boot, Thymeleaf y PostgreSQL.</p>
+        <div class="actions">
+          <a class="btn btn-primary" data-app href="#">Entrar como cliente</a>
+          <a class="btn btn-outline" data-app data-path="/login" href="#">Entrar como administrador</a>
+        </div>
+        <p class="sub" style="margin-top:14px;font-size:13px">Cuentas demo: <code>gdiaz</code> (cliente) · <code>admin</code> (administrador) · clave <code>Password123</code></p>
+      </div>
+      <div class="shot">
+        <img src="https://images.unsplash.com/photo-1574629810360-7efbbe195018?auto=format&fit=crop&w=1200&q=70" alt="Cancha de fútbol con césped sintético iluminada">
+      </div>
+    </section>
+
+    <h2>Qué hace</h2>
+    <p class="sub">Los seis módulos del sistema, cada uno con su pantalla.</p>
+    <div class="grid">
+      <div class="card"><span class="pill">Acceso</span><h3>Login y registro</h3><p>Login por usuario o correo validado contra la BD. Registro con DNI, nombres, apellidos, usuario, clave y perfil; la cuenta nace <b>pendiente</b> y solo el administrador la activa.</p></div>
+      <div class="card"><span class="pill">Canchas</span><h3>Catálogo con filtros</h3><p>Búsqueda por deporte, distrito y rango de precio. Detalle con servicios, reglamento y calendario de bloques de 1.5 h.</p></div>
+      <div class="card"><span class="pill">Reservas</span><h3>Pago y confirmación</h3><p>Subtotal + cargo por servicio del 10 %. Un índice único en la base de datos impide reservar dos veces el mismo bloque.</p></div>
+      <div class="card"><span class="pill">Historial</span><h3>Mis reservas</h3><p>Pestañas Próximas / Pasadas / Canceladas, con cancelación y reprogramación en autoservicio.</p></div>
+      <div class="card"><span class="pill">Clases</span><h3>Clases deportivas</h3><p>Clases dictadas por entrenadores con control de cupo e inscripción en línea.</p></div>
+      <div class="card"><span class="pill">ERP</span><h3>Panel de administración</h3><p>KPIs, ingresos por mes y por cancha, y CRUD de usuarios, canchas, clases e inscripciones con listas desplegables cargadas desde tablas de la BD.</p></div>
+    </div>
+
+    <h2>Arquitectura MVC</h2>
+    <p class="sub">Model: entidades JPA + servicios · View: plantillas Thymeleaf · Controller: Spring MVC (+ API REST).</p>
+    <div class="arch">Navegador ──▶ @Controller (Spring MVC) ──▶ @Service ──▶ Spring Data JPA ──▶ PostgreSQL 16
+                 │                                               ▲
+                 └──▶ Thymeleaf (templates/*.html) ◀── Model ────┘
+JS (fetch) ───▶ @RestController (/api/**) · Spring Security (JWT en cookie HttpOnly + CSRF)</div>
+
+    <h2>Tecnologías</h2>
+    <table>
+      <thead><tr><th>Capa</th><th>Tecnología</th></tr></thead>
+      <tbody>
+        <tr><td>Backend</td><td>Java 21 · Spring Boot 3.3 (Web MVC, Data JPA, Security, Validation)</td></tr>
+        <tr><td>Vistas</td><td>Thymeleaf · HTML5 · TailwindCSS · JavaScript</td></tr>
+        <tr><td>Base de datos</td><td>PostgreSQL 16 (esquema y datos demo cargados por la aplicación)</td></tr>
+        <tr><td>Seguridad</td><td>JWT (cookie HttpOnly / header Bearer) · BCrypt · CSRF</td></tr>
+        <tr><td>Despliegue</td><td>Docker Compose (local) · Render (aplicación + BD) · Vercel (esta portada)</td></tr>
+      </tbody>
+    </table>
+
+    <footer>© <span id="y"></span> CourtHub — Proyecto universitario · Marcos de Desarrollo Web</footer>
+  </div>
+
+  <script>
+    // URL de la aplicación desplegada en Render (cámbiala por la tuya tras el primer deploy).
+    var APP_URL = 'https://courthub.onrender.com';
+    document.querySelectorAll('[data-app]').forEach(function (a) { a.href = APP_URL + (a.getAttribute('data-path') || '/'); });
+    document.getElementById('y').textContent = new Date().getFullYear();
+  </script>
+</body>
+</html>

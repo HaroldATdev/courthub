@@ -5,16 +5,31 @@ import lombok.*;
 
 import java.time.OffsetDateTime;
 
-/** Tabla "usuarios" — roles: cliente | administrador | entrenador. */
+/**
+ * Tabla "usuarios" — perfiles: cliente | administrador | entrenador.
+ * Estado de la cuenta: pendiente (por defecto al registrarse) | activo (solo lo otorga el administrador) | anulado.
+ */
 @Entity
 @Table(name = "usuarios")
 @Getter @Setter
 @NoArgsConstructor @AllArgsConstructor @Builder
 public class Usuario {
 
+    public static final String ACTIVO = "activo";
+    public static final String PENDIENTE = "pendiente";
+    public static final String ANULADO = "anulado";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
+
+    /** Documento de identidad (8 dígitos). Único: se valida en el registro. */
+    @Column(length = 8)
+    private String dni;
+
+    /** Nombre de usuario para iniciar sesión. Único: se valida en el registro. */
+    @Column(length = 50)
+    private String usuario;
 
     @Column(nullable = false, length = 100)
     private String nombre;
@@ -45,9 +60,9 @@ public class Usuario {
     @Builder.Default
     private String deporteFavorito = "Multi";
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 20)
     @Builder.Default
-    private Boolean activo = true;
+    private String estado = PENDIENTE;
 
     @Column(name = "fecha_registro", nullable = false)
     private OffsetDateTime fechaRegistro;
@@ -59,8 +74,10 @@ public class Usuario {
         if (telefono == null) telefono = "";
         if (nivel == null) nivel = "Bronce";
         if (deporteFavorito == null) deporteFavorito = "Multi";
-        if (activo == null) activo = true;
+        if (estado == null) estado = PENDIENTE;
     }
+
+    public boolean estaActivo() { return ACTIVO.equals(estado); }
 
     public String nombreCompleto() {
         return (nombre + " " + (apellido == null ? "" : apellido)).trim();

@@ -4,8 +4,8 @@
 # (vistas Thymeleaf + API REST en un solo servicio), con volumen persistente.
 #
 #   Uso:  docker compose up --build
-#   Web:  http://localhost:8080          ·   API: http://localhost:8080/api/health
-#   Admin (ERP): http://localhost:8080/admin  (admin@courthub.com / Password123)
+#   Web:  http://localhost:8080 (o APP_PORT) ·   API: http://localhost:8080/api/health
+#   Admin (ERP): http://localhost:8080/admin  (usuario admin / Password123)
 # ============================================================
 services:
 
@@ -45,7 +45,7 @@ services:
       SEED_DEMO: "true"
       TZ: America/Lima
     ports:
-      - "8080:8080"
+      - "${APP_PORT:-8080}:8080"   # cambia el puerto del host con APP_PORT=8090 docker compose up
     depends_on:
       db:
         condition: service_healthy

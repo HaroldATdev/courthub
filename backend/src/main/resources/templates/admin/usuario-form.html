@@ -6,7 +6,7 @@
   <header th:replace="~{fragments/layout :: header('admin')}"></header>
 
   <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-6">
-    <div th:replace="~{admin/_layout :: cabecera(${usuarioId == null ? 'Nuevo usuario' : 'Editar usuario'}, 'Datos de la cuenta, rol y estado.')}"></div>
+    <div th:replace="~{admin/_layout :: cabecera(${usuarioId == null ? 'Nuevo usuario' : 'Editar usuario'}, 'DNI, nombres, apellidos, usuario, clave, perfil y estado. El DNI y el usuario deben ser únicos.')}"></div>
 
     <div class="grid lg:grid-cols-[220px_1fr] gap-6 mt-6 items-start">
       <nav th:replace="~{admin/_layout :: sidebar}"></nav>
@@ -17,15 +17,23 @@
           <p th:if="${#fields.hasErrors('*')}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3" th:errors="*{*}"></p>
 
           <div class="grid sm:grid-cols-2 gap-4">
-            <div><label class="ch-label">Nombre</label><input type="text" th:field="*{nombre}" class="ch-input ch-input-plain"></div>
-            <div><label class="ch-label">Apellido</label><input type="text" th:field="*{apellido}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">DNI</label><input type="text" inputmode="numeric" maxlength="8" th:field="*{dni}" class="ch-input ch-input-plain" placeholder="12345678"></div>
+            <div><label class="ch-label">Nombre de usuario</label><input type="text" th:field="*{usuario}" class="ch-input ch-input-plain" placeholder="gdiaz" autocomplete="off"></div>
+            <div><label class="ch-label">Nombres</label><input type="text" th:field="*{nombre}" class="ch-input ch-input-plain"></div>
+            <div><label class="ch-label">Apellidos</label><input type="text" th:field="*{apellido}" class="ch-input ch-input-plain"></div>
             <div class="sm:col-span-2"><label class="ch-label">Correo electrónico</label><input type="email" th:field="*{email}" class="ch-input ch-input-plain"></div>
-            <div class="sm:col-span-2"><label class="ch-label" th:text="${usuarioId == null} ? 'Contraseña' : 'Nueva contraseña (vacío = sin cambios)'"></label><input type="password" th:field="*{password}" class="ch-input ch-input-plain" placeholder="Mínimo 6 caracteres" autocomplete="new-password"></div>
-            <div><label class="ch-label">Rol</label>
+            <div class="sm:col-span-2"><label class="ch-label" th:text="${usuarioId == null} ? 'Clave' : 'Nueva clave (vacío = sin cambios)'"></label><input type="password" th:field="*{password}" class="ch-input ch-input-plain" placeholder="Mínimo 6 caracteres" autocomplete="new-password"></div>
+            <div><label class="ch-label">Perfil</label>
               <select th:field="*{rol}" class="ch-select !w-full !py-2.5">
                 <option value="cliente">Cliente</option>
                 <option value="entrenador">Entrenador</option>
                 <option value="administrador">Administrador</option>
+              </select></div>
+            <div><label class="ch-label">Estado de la cuenta</label>
+              <select th:field="*{estado}" class="ch-select !w-full !py-2.5">
+                <option value="pendiente">Pendiente (por defecto)</option>
+                <option value="activo">Activo</option>
+                <option value="anulado">Anulado</option>
               </select></div>
             <div><label class="ch-label">Teléfono</label><input type="text" th:field="*{telefono}" class="ch-input ch-input-plain" placeholder="+51 9 ..."></div>
             <div><label class="ch-label">Nivel</label>
@@ -35,9 +43,8 @@
             <div><label class="ch-label">Deporte favorito</label>
               <select th:field="*{deporteFavorito}" class="ch-select !w-full !py-2.5">
                 <option value="Multi">Multi</option>
-                <option th:each="d : ${deportes}" th:if="${d.key != 'todos'}" th:value="${d.value}" th:text="${d.value}"></option>
+                <option th:each="d : ${deportesDb}" th:value="${d.nombre}" th:text="${d.nombre}"></option>
               </select></div>
-            <label class="flex items-center gap-2.5 text-sm text-slate-700 cursor-pointer select-none"><input type="checkbox" th:field="*{activo}" class="w-4 h-4 rounded border-gray-300 accent-primary-500">Cuenta activa</label>
           </div>
 
           <div class="flex gap-3 pt-2">

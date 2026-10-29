@@ -1,16 +1,17 @@
 -- ============================================================
 -- CourtHub · 02-seed.sql — Datos de ejemplo (coinciden con el prototipo)
 -- Contraseña de TODOS los usuarios demo: Password123
+-- Login por usuario (admin, gdiaz, crojas, pmunoz, asoto, lperez) o por correo. Todos en estado 'activo'.
 -- ============================================================
 
 -- ---------- USUARIOS ----------
-INSERT INTO usuarios (nombre, apellido, email, password_hash, rol, telefono, nivel, deporte_favorito) VALUES
-  ('Admin',     'Sistema', 'admin@courthub.com',     crypt('Password123', gen_salt('bf', 10)), 'administrador', '+51 9 5555 0001', 'Oro',  'Multi'),
-  ('Gustavo',   'Diaz',    'demo@courthub.com',      crypt('Password123', gen_salt('bf', 10)), 'cliente',       '+51 9 5555 0002', 'Oro',  'Pádel'),
-  ('Carla',     'Rojas',   'entrenador@courthub.com',crypt('Password123', gen_salt('bf', 10)), 'entrenador',    '+51 9 5555 0003', 'Oro',  'Tenis'),
-  ('Pedro',     'Muñoz',   'pmunoz@courthub.com',    crypt('Password123', gen_salt('bf', 10)), 'entrenador',    '+51 9 5555 0004', 'Plata','Fútbol'),
-  ('Ana',       'Soto',    'ana@courthub.com',       crypt('Password123', gen_salt('bf', 10)), 'cliente',       '+51 9 5555 0005', 'Plata','Squash'),
-  ('Luis',      'Perez',   'luis@courthub.com',      crypt('Password123', gen_salt('bf', 10)), 'cliente',       '+51 9 5555 0006', 'Bronce','Fútbol');
+INSERT INTO usuarios (nombre, apellido, email, password_hash, rol, telefono, nivel, deporte_favorito, dni, usuario, estado) VALUES
+  ('Admin',     'Sistema', 'admin@courthub.com',     crypt('Password123', gen_salt('bf', 10)), 'administrador', '+51 9 5555 0001', 'Oro',  'Multi', '10000001', 'admin', 'activo'),
+  ('Gustavo',   'Diaz',    'demo@courthub.com',      crypt('Password123', gen_salt('bf', 10)), 'cliente',       '+51 9 5555 0002', 'Oro',  'Pádel', '10000002', 'gdiaz', 'activo'),
+  ('Carla',     'Rojas',   'entrenador@courthub.com',crypt('Password123', gen_salt('bf', 10)), 'entrenador',    '+51 9 5555 0003', 'Oro',  'Tenis', '10000003', 'crojas', 'activo'),
+  ('Pedro',     'Muñoz',   'pmunoz@courthub.com',    crypt('Password123', gen_salt('bf', 10)), 'entrenador',    '+51 9 5555 0004', 'Plata','Fútbol', '10000004', 'pmunoz', 'activo'),
+  ('Ana',       'Soto',    'ana@courthub.com',       crypt('Password123', gen_salt('bf', 10)), 'cliente',       '+51 9 5555 0005', 'Plata','Squash', '10000005', 'asoto', 'activo'),
+  ('Luis',      'Perez',   'luis@courthub.com',      crypt('Password123', gen_salt('bf', 10)), 'cliente',       '+51 9 5555 0006', 'Bronce','Fútbol', '10000006', 'lperez', 'activo');
 
 -- ---------- CANCHAS ----------
 INSERT INTO canchas (nombre, tipo, subtipo, descripcion, direccion, comuna, precio_hora, calificacion, num_opiniones, imagen_url, verificada, servicios, reglamento) VALUES

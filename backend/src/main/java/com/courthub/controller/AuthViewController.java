@@ -3,6 +3,7 @@ package com.courthub.controller;
 import com.courthub.dto.AuthDtos.AuthResponse;
 import com.courthub.dto.AuthDtos.LoginRequest;
 import com.courthub.dto.AuthDtos.RegisterRequest;
+import com.courthub.dto.AuthDtos.RegisterResponse;
 import com.courthub.dto.form.Formularios.LoginForm;
 import com.courthub.dto.form.Formularios.RegistroForm;
 import com.courthub.exception.ApiException;
@@ -45,12 +46,14 @@ public class AuthViewController {
 
     @GetMapping("/login")
     public String login(@AuthenticationPrincipal AuthUser usuario, @RequestParam(defaultValue = "login") String tab,
-                        @RequestParam(required = false) String salir, Model model) {
+                        @RequestParam(required = false) String salir, @RequestParam(required = false) String registrado,
+                        Model model) {
         if (usuario != null) return "redirect:" + destino(usuario);
         model.addAttribute("tab", tab);
         if (!model.containsAttribute("loginForm")) model.addAttribute("loginForm", new LoginForm());
         if (!model.containsAttribute("registroForm")) model.addAttribute("registroForm", new RegistroForm());
         if (salir != null) model.addAttribute("info", "Sesión cerrada correctamente.");
+        if (registrado != null) model.addAttribute("info", AuthService.MSG_REGISTRO_OK);
         return "index";
     }
 
@@ -64,7 +67,7 @@ public class AuthViewController {
             return "index";
         }
         try {
-            AuthResponse auth = authService.login(new LoginRequest(loginForm.getEmail(), loginForm.getPassword()));
+            AuthResponse auth = authService.login(new LoginRequest(loginForm.getUsuario(), loginForm.getPassword()));
             return iniciarSesion(auth, response);
         } catch (ApiException e) {
             model.addAttribute("loginError", e.getMessage());
@@ -85,9 +88,11 @@ public class AuthViewController {
             return "index";
         }
         try {
-            AuthResponse auth = authService.registrar(new RegisterRequest(
-                    registroForm.getNombre(), "", registroForm.getEmail(), registroForm.getPassword(), registroForm.getRol()));
-            return iniciarSesion(auth, response);
+            // El estado inicial es "pendiente": no se inicia sesión; el administrador debe activar la cuenta.
+            RegisterResponse r = authService.registrar(new RegisterRequest(
+                    registroForm.getDni(), registroForm.getNombres(), registroForm.getApellidos(), registroForm.getUsuario(),
+                    registroForm.getEmail(), registroForm.getPassword(), registroForm.getRol()));
+            return "redirect:/login?registrado=1";
         } catch (ApiException e) {
             model.addAttribute("registroError", e.getMessage());
             return "index";

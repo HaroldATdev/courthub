@@ -37,8 +37,9 @@ public class AdminApiController {
 
     @GetMapping("/usuarios")
     public Map<String, List<UsuarioAdminDto>> usuarios(@RequestParam(required = false) String q,
-                                                       @RequestParam(required = false) String rol) {
-        return Map.of("usuarios", service.usuarios(q, rol));
+                                                       @RequestParam(required = false) String rol,
+                                                       @RequestParam(required = false) String estado) {
+        return Map.of("usuarios", service.usuarios(q, rol, estado));
     }
 
     @GetMapping("/entrenadores")
@@ -58,14 +59,14 @@ public class AdminApiController {
 
     @PatchMapping("/usuarios/{id}/estado")
     public Map<String, UsuarioAdminDto> estadoUsuario(@AuthenticationPrincipal AuthUser admin, @PathVariable Long id,
-                                                      @RequestBody(required = false) EstadoRequest req) {
-        return Map.of("usuario", service.estadoUsuario(admin, id, req == null ? new EstadoRequest(null, null, null) : req));
+                                                      @RequestBody EstadoRequest req) {
+        return Map.of("usuario", service.estadoUsuario(admin, id, req.estado()));
     }
 
     @DeleteMapping("/usuarios/{id}")
     public Map<String, Object> eliminarUsuario(@AuthenticationPrincipal AuthUser admin, @PathVariable Long id) {
         service.eliminarUsuario(admin, id);
-        return Map.of("ok", true, "mensaje", "Usuario desactivado.");
+        return Map.of("ok", true, "mensaje", "Usuario anulado.");
     }
 
     /* ---------- Canchas ---------- */
