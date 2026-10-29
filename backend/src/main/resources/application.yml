@@ -4,6 +4,9 @@
 # ============================================================
 server:
   port: ${PORT:8080}
+  # Detrás del proxy de Render/Vercel (HTTPS) respeta X-Forwarded-Proto/Host para que las
+  # redirecciones y el URI de retorno de Google se construyan con la URL pública https://
+  forward-headers-strategy: framework
   error:
     include-message: never
     include-stacktrace: never
