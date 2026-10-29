@@ -261,7 +261,7 @@ mvn spring-boot:run            # http://localhost:8080
 **Inicio de sesión con Google (extra):** el botón *Continuar con Google* del login usa OAuth2/OpenID Connect de Spring Security. Google confirma la identidad; si el correo no existe, la cuenta se crea como cliente en estado *pendiente* (misma regla que el registro) y, si está activa, entra con la cookie JWT y la redirección por perfil. Se activa solo con credenciales de Google Cloud Console:
 
 1. En <https://console.cloud.google.com/apis/credentials> crea un *ID de cliente OAuth 2.0* de tipo **Aplicación web**.
-2. Agrega como *URI de redirección autorizado* `http://localhost:8080/login/oauth2/code/google` (y la URL pública de Render, por ejemplo `https://courthub.onrender.com/login/oauth2/code/google`).
+2. Agrega como *URI de redirección autorizado* `http://localhost:8080/login/oauth2/code/google` (y la URL pública de Render, por ejemplo `https://courthub-1fwc.onrender.com/login/oauth2/code/google`).
 3. Define `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` (en un archivo `.env` junto a `docker-compose.yml`, o en las variables de Render) y vuelve a levantar la app. Sin esas variables el botón muestra un aviso y todo lo demás funciona igual.
 
 **Flujo para la demo:** registrarse desde el login (probar un DNI y un usuario repetidos) → intentar entrar (mensaje "pendiente de activación") → entrar como `admin` → *Usuarios → filtro Pendiente → Activar* → volver a entrar con la cuenta nueva → crear una cancha y una clase eligiendo deporte y nivel desde las listas cargadas de la BD.
@@ -275,7 +275,7 @@ mvn spring-boot:run            # http://localhost:8080
 | Aplicación Spring Boot + base de datos PostgreSQL | **Render** (plan gratuito, despliega el `Dockerfile`) | [`render.yaml`](render.yaml) |
 | Portada/landing del proyecto (estática) con enlaces a la app y al repositorio | **Vercel** | [`vercel.json`](vercel.json) + [`landing/index.html`](landing/index.html) |
 
-1. **Render:** entra a <https://dashboard.render.com> → *New → Blueprint* → selecciona el repositorio. Render lee `render.yaml`, crea la base de datos `courthub-db` y el servicio web `courthub`, inyecta las variables `PG*` y genera `JWT_SECRET`. El primer build tarda unos minutos (compila con Maven). Al terminar, la app queda en `https://courthub.onrender.com` (o el nombre que Render asigne) y se puebla sola con los datos demo.
+1. **Render:** entra a <https://dashboard.render.com> → *New → Blueprint* → selecciona el repositorio. Render lee `render.yaml`, crea la base de datos `courthub-db` y el servicio web `courthub`, inyecta las variables `PG*` y genera `JWT_SECRET`. El primer build tarda unos minutos (compila con Maven). Al terminar, la app queda en `https://courthub-1fwc.onrender.com` (o el nombre que Render asigne) y se puebla sola con los datos demo.
 2. **Vercel:** importa el mismo repositorio en <https://vercel.com/new>; `vercel.json` indica que el sitio es estático y que la carpeta publicada es `landing/`. Si prefieres configurarlo a mano, pon *Root Directory* = `landing` y *Framework Preset* = *Other*.
 3. Edita la constante `APP_URL` al final de `landing/index.html` con la URL real de Render para que los botones "Abrir la aplicación" apunten a tu despliegue.
 

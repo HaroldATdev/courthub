@@ -10,7 +10,7 @@
 #   2. En https://dashboard.render.com → New → Blueprint → elige el repo.
 #      Render lee este archivo y crea la base de datos + el servicio web.
 #   3. Espera el primer build (compila con Maven dentro del Dockerfile, ~5 min).
-#   4. Abre https://courthub.onrender.com (o el nombre que Render asigne).
+#   4. Abre https://courthub-1fwc.onrender.com (o el nombre que Render asigne).
 #      Usuarios demo: admin / Password123 · gdiaz / Password123
 # ============================================================
 services:
