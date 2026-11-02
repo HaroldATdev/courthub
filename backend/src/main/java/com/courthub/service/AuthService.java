@@ -86,8 +86,10 @@ public class AuthService {
      * Inicio de sesión con Google: la identidad la confirma Google (OpenID Connect).
      * Si el correo no existe se crea la cuenta como cliente en estado "pendiente" (la activa el
      * administrador, igual que un registro normal). Solo las cuentas activas pueden entrar.
+     * noRollbackFor: la excepción "pendiente/anulada" es solo un aviso para el usuario; la cuenta recién
+     * creada debe quedar guardada (sin esto, Spring deshacía el INSERT al lanzar la excepción).
      */
-    @Transactional
+    @Transactional(noRollbackFor = ApiException.class)
     public Usuario loginConGoogle(String email, String nombres, String apellidos) {
         String correo = email.trim().toLowerCase();
         Usuario u = usuarios.findByEmailIgnoreCase(correo).orElseGet(() -> {
