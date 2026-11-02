@@ -62,6 +62,26 @@ public final class Formularios {
         @NotBlank(message = "Selecciona un bloque horario.") private String horaInicio;
     }
 
+    /** "Mi perfil": datos que el propio usuario puede actualizar (correo y clave quedan fuera). */
+    @Data
+    public static class PerfilForm {
+        @NotBlank(message = "El DNI es obligatorio.") @Pattern(regexp = "\\d{8}", message = "El DNI debe tener 8 dígitos.") private String dni;
+        @NotBlank(message = "Los nombres son obligatorios.") private String nombre;
+        @NotBlank(message = "Los apellidos son obligatorios.") private String apellido;
+        @NotBlank(message = "El nombre de usuario es obligatorio.") @Size(min = 3, max = 50, message = "El usuario debe tener entre 3 y 50 caracteres.")
+        @Pattern(regexp = "[A-Za-z0-9._-]+", message = "El usuario solo admite letras, números, punto, guion y guion bajo.") private String usuario;
+        private String telefono;
+        private String nivel = "Bronce";
+        private String deporteFavorito = "Multi";
+
+        public static PerfilForm de(com.courthub.model.Usuario u) {
+            PerfilForm f = new PerfilForm();
+            f.dni = u.getDni(); f.nombre = u.getNombre(); f.apellido = u.getApellido(); f.usuario = u.getUsuario();
+            f.telefono = u.getTelefono(); f.nivel = u.getNivel(); f.deporteFavorito = u.getDeporteFavorito();
+            return f;
+        }
+    }
+
     /* ---------------- Panel admin ---------------- */
 
     @Data

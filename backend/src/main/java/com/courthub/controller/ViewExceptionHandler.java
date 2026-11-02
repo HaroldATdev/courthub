@@ -11,7 +11,7 @@ import org.springframework.web.servlet.ModelAndView;
 @Slf4j
 @ControllerAdvice(assignableTypes = {
         AuthViewController.class, CanchaViewController.class, ReservaViewController.class,
-        ClaseViewController.class, AdminViewController.class})
+        ClaseViewController.class, AdminViewController.class, PerfilViewController.class})
 public class ViewExceptionHandler {
 
     @ExceptionHandler(ApiException.class)

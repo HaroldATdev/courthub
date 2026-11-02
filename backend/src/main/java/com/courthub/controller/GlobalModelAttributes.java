@@ -23,7 +23,7 @@ import java.util.Map;
  */
 @ControllerAdvice(assignableTypes = {
         AuthViewController.class, CanchaViewController.class, ReservaViewController.class,
-        ClaseViewController.class, AdminViewController.class})
+        ClaseViewController.class, AdminViewController.class, PerfilViewController.class})
 @RequiredArgsConstructor
 public class GlobalModelAttributes {
 

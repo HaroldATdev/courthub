@@ -1,6 +1,7 @@
 package com.courthub.service;
 
 import com.courthub.dto.AuthDtos.*;
+import com.courthub.dto.form.Formularios.PerfilForm;
 import com.courthub.exception.ApiException;
 import com.courthub.model.Usuario;
 import com.courthub.repository.UsuarioRepository;
@@ -106,6 +107,36 @@ public class AuthService {
         if (Usuario.PENDIENTE.equals(u.getEstado())) throw ApiException.forbidden(MSG_PENDIENTE);
         if (Usuario.ANULADO.equals(u.getEstado())) throw ApiException.forbidden(MSG_ANULADA);
         return u;
+    }
+
+    @Transactional(readOnly = true)
+    public Usuario obtener(Long id) {
+        return usuarios.findById(id).orElseThrow(() -> ApiException.notFound("Usuario no encontrado."));
+    }
+
+    /**
+     * "Mi perfil": el usuario completa/corrige sus datos. Mantiene las mismas reglas de unicidad del
+     * registro (DNI y nombre de usuario); el correo y la clave no se modifican aquí.
+     */
+    @Transactional
+    public Usuario actualizarPerfil(Long id, PerfilForm f) {
+        Usuario u = obtener(id);
+        String dni = f.getDni().trim();
+        String usuario = f.getUsuario().trim();
+        if (!dni.equals(u.getDni()) && usuarios.existsByDni(dni)) {
+            throw ApiException.conflict("El DNI " + dni + " ya está registrado por otra cuenta.");
+        }
+        if (!usuario.equalsIgnoreCase(u.getUsuario()) && usuarios.existsByUsuarioIgnoreCase(usuario)) {
+            throw ApiException.conflict("El nombre de usuario \"" + usuario + "\" ya está en uso.");
+        }
+        u.setDni(dni);
+        u.setUsuario(usuario);
+        u.setNombre(f.getNombre().trim());
+        u.setApellido(f.getApellido().trim());
+        u.setTelefono(f.getTelefono() == null ? "" : f.getTelefono().trim());
+        u.setNivel(f.getNivel() == null || f.getNivel().isBlank() ? "Bronce" : f.getNivel().trim());
+        u.setDeporteFavorito(f.getDeporteFavorito() == null || f.getDeporteFavorito().isBlank() ? "Multi" : f.getDeporteFavorito().trim());
+        return usuarios.save(u);
     }
 
     @Transactional(readOnly = true)

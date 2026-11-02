@@ -262,6 +262,8 @@ mvn spring-boot:run            # http://localhost:8080
 
 **Modelo de datos del avance:** `usuarios` incorpora `dni` (único), `usuario` (único, sin distinguir mayúsculas) y `estado` (`activo` · `pendiente` · `anulado`, con `CHECK`). Las bases creadas antes se migran solas al arrancar (`DataInitializer.migrarTercerAvance`). Las consultas 17 a 22 de [`consultas-evidencia.sql`](backend/src/main/resources/db/consultas-evidencia.sql) sirven como evidencia.
 
+**Mi perfil (extra):** desde el menú del usuario (avatar → *Mi perfil*, ruta `/perfil`) cada cuenta completa o corrige su DNI, nombres, apellidos, usuario, teléfono, nivel y deporte favorito; útil para las cuentas creadas con Google, que llegan solo con nombre y correo. Aplica las mismas validaciones de DNI y usuario únicos. El correo es de solo lectura y la contraseña no se edita ahí (previsto: verificación en dos pasos por correo en la siguiente entrega). También disponible como `PUT /api/auth/me`.
+
 **Capturas de pantalla:** las 16 capturas del flujo, cada una con su explicación para el informe, están en [`docs/capturas/`](docs/capturas/README.md).
 
 **Inicio de sesión con Google (extra):** el botón *Continuar con Google* del login usa OAuth2/OpenID Connect de Spring Security (`GoogleOAuthConfig`, `GoogleLoginHandler`, `AuthService.loginConGoogle`). Google confirma la identidad; si el correo no existe, la cuenta se crea como cliente en estado *pendiente* (misma regla que el registro) y, si está activa, entra con la cookie JWT y la redirección por perfil. **Ya está configurado y probado en producción** (`courthub-1fwc.onrender.com`): al entrar con un Gmail nuevo la cuenta queda pendiente, el administrador la activa en *Usuarios* y el siguiente acceso con Google entra directo.

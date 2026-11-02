@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<!-- Vista: Mi perfil · Controlador: PerfilViewController (GET/POST /perfil) -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Mi perfil')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('perfil')}"></header>
+
+  <main class="flex-1 w-full max-w-5xl mx-auto px-4 sm:px-6 pb-10 pt-8">
+    <h1 class="font-display text-3xl font-bold text-slate-900">Mi perfil</h1>
+    <p class="text-sm text-gray-500 mt-1.5">Completa o actualiza tus datos personales. Las cuentas creadas con Google llegan solo con nombre y correo.</p>
+
+    <div class="grid lg:grid-cols-3 gap-6 mt-6 items-start">
+      <!-- ============ Resumen de la cuenta ============ -->
+      <aside class="card p-6 space-y-4">
+        <div class="flex items-center gap-3">
+          <span class="w-14 h-14 rounded-full bg-primary-100 text-primary-700 grid place-items-center text-lg font-bold" th:text="${usuario.iniciales()}">GD</span>
+          <div class="min-w-0">
+            <p class="font-display font-semibold text-slate-900 truncate" th:text="${cuenta.nombre} + ' ' + ${cuenta.apellido}"></p>
+            <p class="text-xs text-gray-400 truncate" th:text="${cuenta.email}"></p>
+          </div>
+        </div>
+        <dl class="text-sm space-y-2.5 pt-4 border-t border-gray-100">
+          <div class="flex justify-between"><dt class="text-gray-500">Perfil</dt><dd><span class="badge" th:classappend="${cuenta.rol == 'administrador'} ? 'badge-completada' : (${cuenta.rol == 'entrenador'} ? 'badge-pendiente' : 'badge-confirmada')" th:text="${#strings.capitalize(cuenta.rol)}"></span></dd></div>
+          <div class="flex justify-between"><dt class="text-gray-500">Estado</dt><dd><span class="badge badge-confirmada" th:text="${#strings.capitalize(cuenta.estado)}"></span></dd></div>
+          <div class="flex justify-between"><dt class="text-gray-500">Usuario</dt><dd class="font-mono text-xs text-slate-700" th:text="${cuenta.usuario}"></dd></div>
+          <div class="flex justify-between"><dt class="text-gray-500">DNI</dt><dd class="font-mono text-xs" th:classappend="${#strings.isEmpty(cuenta.dni)} ? 'text-amber-600' : 'text-slate-700'" th:text="${#strings.isEmpty(cuenta.dni)} ? 'Sin registrar' : ${cuenta.dni}"></dd></div>
+        </dl>
+        <div class="bg-primary-50/60 border border-primary-100 rounded-xl p-4 text-xs text-gray-600 leading-relaxed">
+          <p class="font-semibold text-slate-800 flex items-center gap-1.5"><span class="text-primary-500" data-icon="lock" data-cls="w-4 h-4"></span>Contraseña</p>
+          <p class="mt-1">No se cambia desde aquí. En la próxima versión la cuenta se verificará con un código enviado a tu correo (autenticación de dos factores).</p>
+        </div>
+      </aside>
+
+      <!-- ============ Formulario (POST /perfil) ============ -->
+      <section class="lg:col-span-2">
+        <form th:action="@{/perfil}" th:object="${perfilForm}" method="post" class="card p-6 sm:p-8 space-y-5" novalidate>
+          <p th:if="${perfilError}" th:text="${perfilError}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"></p>
+          <div class="grid sm:grid-cols-2 gap-4">
+            <div><label class="ch-label">DNI</label><input type="text" inputmode="numeric" maxlength="8" th:field="*{dni}" class="ch-input ch-input-plain" placeholder="12345678"></div>
+            <div><label class="ch-label">Nombre de usuario</label><input type="text" th:field="*{usuario}" class="ch-input ch-input-plain" autocomplete="username"></div>
+            <div><label class="ch-label">Nombres</label><input type="text" th:field="*{nombre}" class="ch-input ch-input-plain" autocomplete="given-name"></div>
+            <div><label class="ch-label">Apellidos</label><input type="text" th:field="*{apellido}" class="ch-input ch-input-plain" autocomplete="family-name"></div>
+            <div class="sm:col-span-2"><label class="ch-label">Correo electrónico</label><input type="email" th:value="${cuenta.email}" class="ch-input ch-input-plain bg-gray-50 text-gray-500" readonly><p class="text-[11px] text-gray-400 mt-1">El correo identifica tu cuenta y no se puede cambiar.</p></div>
+            <div><label class="ch-label">Teléfono / celular</label><input type="tel" th:field="*{telefono}" class="ch-input ch-input-plain" placeholder="+51 9 ..." autocomplete="tel"></div>
+            <div><label class="ch-label">Nivel</label>
+              <select th:field="*{nivel}" class="ch-select !w-full !py-2.5">
+                <option th:each="n : ${ {'Bronce','Plata','Oro'} }" th:value="${n}" th:text="${n}"></option>
+              </select></div>
+            <div><label class="ch-label">Deporte favorito</label>
+              <select th:field="*{deporteFavorito}" class="ch-select !w-full !py-2.5">
+                <option value="Multi">Multi</option>
+                <option th:each="d : ${deportesDb}" th:value="${d.nombre}" th:text="${d.nombre}"></option>
+              </select></div>
+          </div>
+          <div class="flex gap-3 pt-2">
+            <a th:href="@{/dashboard}" class="btn-outline flex-1 !py-2.5">Volver</a>
+            <button type="submit" class="btn-primary flex-1 !py-2.5">Guardar cambios</button>
+          </div>
+        </form>
+      </section>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>
