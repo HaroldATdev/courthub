@@ -47,6 +47,9 @@ services:
       # Inicio de sesión con Google (opcional): credenciales OAuth 2.0 de Google Cloud Console
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
+      # Opcional: sobrescribir las claves del seed (en producción son obligatorias, ver README)
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      DEMO_PASSWORD: ${DEMO_PASSWORD:-}
     ports:
       - "${APP_PORT:-8080}:8080"   # cambia el puerto del host con APP_PORT=8090 docker compose up
     depends_on:

@@ -13,7 +13,7 @@ Sistema de reservas de canchas deportivas (fútbol, fulbito, pádel, tenis y squ
 | Despliegue    | Docker + Docker Compose (local) · **Render** (app + PostgreSQL en producción) · **Vercel** (portada) |
 
 > 🌐 **Aplicación en producción:** <https://courthub-1fwc.onrender.com> (Render, plan gratuito: la primera visita tras 15 min de inactividad tarda ~30 s en despertar).
-> Usuarios demo: `admin` (administrador) · `gdiaz` (cliente) · clave `Password123`. El botón **Continuar con Google** está activo en producción.
+> Usuarios: `admin` (administrador) · `gdiaz` (cliente). **Las claves de producción no están en este repositorio** (se definen con `ADMIN_PASSWORD` y `DEMO_PASSWORD` en Render y se entregan por un canal privado). El botón **Continuar con Google** está activo en producción.
 
 ---
 
@@ -177,7 +177,7 @@ El primer arranque tarda unos minutos (Maven descarga dependencias). La base de 
 
 > Si el puerto 8080 está ocupado en tu máquina: `APP_PORT=8090 docker compose up --build` (PowerShell: `$env:APP_PORT=8090; docker compose up --build`) y abre http://localhost:8090.
 
-### 👤 Cuentas de demostración (contraseña: `Password123`)
+### 👤 Cuentas de demostración (entorno local: contraseña `Password123`)
 
 | Usuario   | Correo                    | Perfil        | Estado | Nota                                          |
 |-----------|---------------------------|---------------|--------|-----------------------------------------------|
@@ -186,6 +186,8 @@ El primer arranque tarda unos minutos (Maven descarga dependencias). La base de 
 | `admin`   | `admin@courthub.com`      | Administrador | activo | Entra directo al **panel ERP** (`/admin`)     |
 
 > El login acepta el **nombre de usuario o el correo**. Las cuentas que se registran desde el login nacen en estado **pendiente** y solo pueden entrar cuando el administrador las activa en *Administración → Usuarios*.
+
+> 🔐 **Claves en producción:** `Password123` solo vale para el entorno local. En el despliegue público la aplicación lee las variables `ADMIN_PASSWORD` (cuenta `admin`) y `DEMO_PASSWORD` (cuentas `gdiaz`, `crojas`, `pmunoz`, `asoto`, `lperez`) y sobrescribe las claves del seed en cada arranque (`DataInitializer.aplicarClavesDeEntorno`). Así la clave real nunca se publica en GitHub.
 
 ---
 

@@ -33,6 +33,11 @@ services:
         value: "true"
       - key: JWT_SECRET
         generateValue: true
+      # Claves de producción (NO usar Password123, que es pública): defínelas en el panel de Render
+      - key: ADMIN_PASSWORD
+        sync: false
+      - key: DEMO_PASSWORD
+        sync: false
       # Inicio de sesión con Google (opcional): complétalas en el panel de Render
       - key: GOOGLE_CLIENT_ID
         sync: false
