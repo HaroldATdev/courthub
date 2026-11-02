@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<!-- Vista: ¿Olvidaste tu contraseña? · Controlador: RecuperacionViewController -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Recuperar contraseña')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen grid place-items-center px-4 py-10">
+  <main class="w-full max-w-[440px] fade-up">
+    <div class="flex items-center justify-center gap-2.5 mb-8">
+      <span class="w-10 h-10 rounded-xl bg-primary-500 grid place-items-center text-white" data-icon="logo" data-cls="w-5 h-5"></span>
+      <span class="font-display font-bold text-[22px] text-slate-900">CourtHub</span>
+    </div>
+    <div class="bg-white rounded-3xl shadow-[0_24px_70px_-24px_rgba(16,24,40,.28)] p-7 sm:p-10">
+      <h1 class="font-display text-2xl font-bold text-slate-900">¿Olvidaste tu contraseña?</h1>
+      <p class="text-sm text-gray-500 mt-1.5">Ingresa tu usuario o correo y te enviaremos un enlace para crear una contraseña nueva.</p>
+
+      <div th:if="${enviado}" class="mt-6 text-sm text-primary-700 bg-primary-50 border border-primary-100 rounded-xl px-4 py-3">
+        Si la cuenta existe y está activa, te enviamos un correo con el enlace. Revisa también la carpeta de spam. El enlace vale 30 minutos.
+      </div>
+
+      <form th:unless="${enviado}" th:action="@{/olvide-clave}" method="post" class="space-y-5 mt-6">
+        <div>
+          <label class="ch-label" for="identificador">Usuario o correo electrónico</label>
+          <div class="input-wrap">
+            <span data-icon="mail" data-cls="w-[18px] h-[18px]"></span>
+            <input id="identificador" name="identificador" type="text" required class="ch-input" placeholder="gdiaz o ejemplo@courthub.com" autocomplete="username">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary w-full !py-3.5">Enviar enlace</button>
+      </form>
+      <p class="text-center text-sm text-slate-600 mt-6"><a th:href="@{/login}" class="link-green">← Volver a iniciar sesión</a></p>
+    </div>
+  </main>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

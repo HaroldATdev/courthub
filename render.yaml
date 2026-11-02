@@ -34,6 +34,13 @@ services:
       - key: JWT_SECRET
         generateValue: true
       # Claves de producción (NO usar Password123, que es pública): defínelas en el panel de Render
+      # Correo SMTP para recuperar contraseña (opcional)
+      - key: MAIL_HOST
+        sync: false
+      - key: MAIL_USERNAME
+        sync: false
+      - key: MAIL_PASSWORD
+        sync: false
       - key: ADMIN_PASSWORD
         sync: false
       - key: DEMO_PASSWORD

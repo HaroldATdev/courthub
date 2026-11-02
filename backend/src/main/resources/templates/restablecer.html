@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<!-- Vista: definir una contraseña nueva con el token recibido por correo · Controlador: RecuperacionViewController -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Nueva contraseña')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen grid place-items-center px-4 py-10">
+  <main class="w-full max-w-[440px] fade-up">
+    <div class="flex items-center justify-center gap-2.5 mb-8">
+      <span class="w-10 h-10 rounded-xl bg-primary-500 grid place-items-center text-white" data-icon="logo" data-cls="w-5 h-5"></span>
+      <span class="font-display font-bold text-[22px] text-slate-900">CourtHub</span>
+    </div>
+    <div class="bg-white rounded-3xl shadow-[0_24px_70px_-24px_rgba(16,24,40,.28)] p-7 sm:p-10">
+      <h1 class="font-display text-2xl font-bold text-slate-900">Nueva contraseña</h1>
+
+      <div th:unless="${tokenValido}" class="mt-6">
+        <p class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3">El enlace no es válido o ya venció. Solicita uno nuevo.</p>
+        <a th:href="@{/olvide-clave}" class="btn-primary w-full mt-5 !py-3.5">Solicitar otro enlace</a>
+      </div>
+
+      <form th:if="${tokenValido}" th:action="@{/restablecer}" method="post" class="space-y-5 mt-6">
+        <input type="hidden" name="token" th:value="${token}">
+        <p th:if="${error}" th:text="${error}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"></p>
+        <div>
+          <label class="ch-label" for="password">Contraseña nueva</label>
+          <div class="input-wrap">
+            <span data-icon="lock" data-cls="w-[18px] h-[18px]"></span>
+            <input id="password" name="password" type="password" required minlength="6" class="ch-input" placeholder="Mínimo 6 caracteres" autocomplete="new-password">
+          </div>
+        </div>
+        <div>
+          <label class="ch-label" for="password2">Confirmar contraseña</label>
+          <div class="input-wrap">
+            <span data-icon="lock" data-cls="w-[18px] h-[18px]"></span>
+            <input id="password2" name="password2" type="password" required minlength="6" class="ch-input" placeholder="Repite la contraseña" autocomplete="new-password">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary w-full !py-3.5">Guardar contraseña</button>
+      </form>
+    </div>
+  </main>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

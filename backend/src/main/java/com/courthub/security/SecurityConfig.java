@@ -1,5 +1,6 @@
 package com.courthub.security;
 
+import com.courthub.repository.UsuarioRepository;
 import com.courthub.service.JwtService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.ObjectProvider;
@@ -34,6 +35,7 @@ import java.util.List;
 public class SecurityConfig {
 
     private final JwtService jwtService;
+    private final UsuarioRepository usuarioRepository;
     private final GoogleLoginHandler googleLoginHandler;
     /** Presente solo cuando están configuradas GOOGLE_CLIENT_ID / GOOGLE_CLIENT_SECRET (ver GoogleOAuthConfig). */
     private final ObjectProvider<ClientRegistrationRepository> clientRegistrations;
@@ -56,7 +58,7 @@ public class SecurityConfig {
                     .requestMatchers("/api/health", "/api/auth/login", "/api/auth/register").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
                     .anyRequest().authenticated())
-            .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new JwtAuthFilter(jwtService, usuarioRepository), UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 
@@ -72,14 +74,14 @@ public class SecurityConfig {
                     .accessDeniedPage("/acceso-denegado"))
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/", "/login", "/registro", "/acceso-denegado", "/error",
-                            "/oauth2/**", "/login/oauth2/**",
+                            "/oauth2/**", "/login/oauth2/**", "/olvide-clave", "/restablecer",
                             "/css/**", "/js/**", "/img/**", "/favicon.ico").permitAll()
                     .requestMatchers("/admin/**").hasRole("ADMINISTRADOR")
                     .anyRequest().authenticated())
             .formLogin(f -> f.disable())
             .httpBasic(b -> b.disable())
             .logout(l -> l.disable()) // el logout lo gestiona AuthViewController (borra la cookie)
-            .addFilterBefore(new JwtAuthFilter(jwtService), UsernamePasswordAuthenticationFilter.class);
+            .addFilterBefore(new JwtAuthFilter(jwtService, usuarioRepository), UsernamePasswordAuthenticationFilter.class);
 
         // "Continuar con Google" (OAuth2 / OpenID Connect) solo si hay credenciales configuradas
         ClientRegistrationRepository registros = clientRegistrations.getIfAvailable();

@@ -53,6 +53,11 @@
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-oauth2-client</artifactId>
     </dependency>
+    <!-- Envío de correo (recuperación de contraseña) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-mail</artifactId>
+    </dependency>
     <!-- Validación de DTOs (@NotBlank, @Email, ...) -->
     <dependency>
       <groupId>org.springframework.boot</groupId>

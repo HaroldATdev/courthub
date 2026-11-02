@@ -1,5 +1,7 @@
 package com.courthub.security;
 
+import com.courthub.model.Usuario;
+import com.courthub.repository.UsuarioRepository;
 import com.courthub.service.JwtService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -19,13 +21,19 @@ import java.util.List;
  *  - Header "Authorization: Bearer <token>" (clientes de la API).
  *  - Cookie CH_TOKEN (navegación por las vistas). Para rutas /api/** la cookie solo se acepta
  *    si viene el header X-Requested-With (lo envía js/api.js), como protección anti-CSRF.
+ *
+ * El token solo identifica al usuario: en cada petición se consulta la BD y la sesión solo es válida
+ * si la cuenta sigue en estado "activo". Así, anular a un usuario cierra su sesión de inmediato (no
+ * hay que esperar a que caduque el JWT) y los cambios de perfil o de rol se aplican al instante.
  */
 public class JwtAuthFilter extends OncePerRequestFilter {
 
     private final JwtService jwtService;
+    private final UsuarioRepository usuarios;
 
-    public JwtAuthFilter(JwtService jwtService) {
+    public JwtAuthFilter(JwtService jwtService, UsuarioRepository usuarios) {
         this.jwtService = jwtService;
+        this.usuarios = usuarios;
     }
 
     @Override
@@ -44,16 +52,21 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         if (token != null) {
             try {
-                AuthUser usuario = jwtService.parsear(token);
+                AuthUser jwt = jwtService.parsear(token);
+                Usuario u = usuarios.findById(jwt.id()).filter(Usuario::estaActivo)
+                        .orElseThrow(() -> new IllegalStateException("cuenta inactiva o inexistente"));
+                AuthUser usuario = new AuthUser(u.getId(), u.getEmail(), u.getRol(), u.getNombre(), u.getApellido(),
+                        u.getNivel(), u.getDeporteFavorito());
                 var auth = new UsernamePasswordAuthenticationToken(
                         usuario, null, List.of(new SimpleGrantedAuthority("ROLE_" + usuario.rol().toUpperCase())));
                 SecurityContextHolder.getContext().setAuthentication(auth);
             } catch (Exception e) {
                 if (esApi) {
-                    JsonAuthHandlers.escribir(response, HttpServletResponse.SC_UNAUTHORIZED, "Token inválido o expirado.");
+                    JsonAuthHandlers.escribir(response, HttpServletResponse.SC_UNAUTHORIZED, "Token inválido, expirado o cuenta no activa.");
                     return;
                 }
-                // Cookie caducada en la navegación web: se limpia y la ruta protegida redirige al login
+                // Cookie caducada o cuenta anulada en la navegación web: se limpia y la ruta protegida redirige al login
+                request.getSession().invalidate();
                 response.addHeader(HttpHeaders.SET_COOKIE, TokenCookie.borrar().toString());
             }
         }

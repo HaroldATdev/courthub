@@ -260,9 +260,13 @@ mvn spring-boot:run            # http://localhost:8080
 | 4 | **CRUD de usuarios** en el perfil administrador | Listado con filtros por perfil, estado y búsqueda (DNI, usuario, nombre, correo); crear, editar (formulario `th:object`), cambiar estado (**Activar / Pendiente / Anular**) y exportar CSV, con las mismas validaciones de DNI/usuario únicos | `/admin/usuarios`, `AdminViewController`, `AdminService` |
 | 5 | **Listas desplegables desde tablas de la BD** en los dos CRUD del 2.º avance | Tabla `deportes` → select *Deporte* en **canchas** y **clases**; tabla `niveles_clase` → select *Nivel* en **clases**. Se cargan en `GlobalModelAttributes` vía `CatalogoService` y el servicio rechaza valores que no existan en el catálogo | `db/schema.sql`, `model/Deporte`, `model/NivelClase`, `admin/cancha-form.html`, `admin/clase-form.html` |
 
-**Modelo de datos del avance:** `usuarios` incorpora `dni` (único), `usuario` (único, sin distinguir mayúsculas), `telefono` (celular peruano normalizado a `+51 9XX XXX XXX`) y `estado` (`activo` · `pendiente` · `anulado`, con `CHECK`). Las bases creadas antes se migran solas al arrancar (`DataInitializer.migrarTercerAvance`). Las consultas 17 a 22 de [`consultas-evidencia.sql`](backend/src/main/resources/db/consultas-evidencia.sql) sirven como evidencia.
+**Modelo de datos del avance:** `usuarios` incorpora `dni` (único), `usuario` (único, sin distinguir mayúsculas), `telefono` (celular peruano normalizado a `+51 9XX XXX XXX`) y `estado` (`activo` · `pendiente` · `anulado`, con `CHECK`). La tabla `claves_reset` guarda los enlaces de recuperación de contraseña (solo el hash del token). Las bases creadas antes se migran solas al arrancar (`DataInitializer.migrarTercerAvance`). Las consultas 17 a 22 de [`consultas-evidencia.sql`](backend/src/main/resources/db/consultas-evidencia.sql) sirven como evidencia.
 
 **Mi perfil (extra):** desde el menú del usuario (avatar → *Mi perfil*, ruta `/perfil`) cada cuenta completa o corrige su DNI, nombres, apellidos, usuario, teléfono, nivel y deporte favorito; útil para las cuentas creadas con Google, que llegan solo con nombre y correo. Aplica las mismas validaciones de DNI y usuario únicos. El correo es de solo lectura y la contraseña no se edita ahí (previsto: verificación en dos pasos por correo en la siguiente entrega). También disponible como `PUT /api/auth/me`.
+
+**Recuperar contraseña:** el enlace *¿Olvidaste tu contraseña?* del login lleva a `/olvide-clave`. Se pide el usuario o correo y, si la cuenta existe y está activa, se envía un enlace `/restablecer?token=…` (la respuesta es la misma exista o no la cuenta, para no revelar qué correos están registrados). El token es aleatorio de 256 bits, **en la BD solo se guarda su hash SHA-256** (tabla `claves_reset`), vale **30 minutos** y es de **un solo uso**; pedir uno nuevo invalida los anteriores. El correo sale por SMTP si se definen `MAIL_HOST`, `MAIL_USERNAME` y `MAIL_PASSWORD` (con Gmail: `smtp.gmail.com` y una *contraseña de aplicación*); sin esas variables el enlace se escribe en el log del servidor (modo desarrollo).
+
+**Sesión de cuentas anuladas:** el filtro JWT consulta la BD en cada petición y solo acepta cuentas en estado `activo`. Al anular a un usuario su sesión se cierra de inmediato (antes seguía válida hasta que caducara el token de 8 h), y los cambios de perfil o de rol se aplican al instante.
 
 **Capturas de pantalla:** las 16 capturas del flujo, cada una con su explicación para el informe, están en [`docs/capturas/`](docs/capturas/README.md).
 
@@ -294,6 +298,32 @@ Cómo se hizo (para reproducirlo):
 3. La constante `APP_URL` al final de `landing/index.html` apunta a la URL de Render para que los botones "Abrir la aplicación" lleven al sistema.
 
 > El plan gratuito de Render "duerme" el servicio tras 15 minutos sin tráfico: la primera visita puede tardar unos 30 segundos en despertar.
+
+## 🧭 Hoja de ruta (siguiente entrega)
+
+| Fase | Entregable | Detalle |
+|------|------------|---------|
+| 1 | **Migración de la base de datos a Supabase** | Pasar PostgreSQL de Render a Supabase (también PostgreSQL 16). Solo cambian las variables `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` y `PGDATABASE`; el esquema (`schema.sql`) y el seed se ejecutan igual al arrancar. Ventajas: la base gratuita no caduca a los 30 días como la de Render y trae panel web para ver tablas y ejecutar SQL durante la exposición. |
+| 2 | **Pagos en modo sandbox** | Tabla `pagos` (reserva, proveedor, id de transacción, monto, estado, fecha) y `PagoService`. La reserva nace `pendiente` y pasa a `confirmada` cuando la pasarela confirma el cobro por **webhook con verificación de firma**; un proceso programado (`@Scheduled`) libera las reservas no pagadas a los 15 minutos. El cliente paga en el checkout del proveedor (Culqi o Mercado Pago, con Yape y tarjeta): CourtHub nunca ve ni guarda datos de tarjeta. Se demuestra con tarjetas de prueba, sin mover dinero real. |
+| 3 | **Verificación en dos pasos por correo (2FA)** | Código de un solo uso enviado al correo (reutiliza el envío SMTP ya implementado). Con el correo verificado, los clientes ya no necesitarían la aprobación manual del administrador (que se mantendría para quien se registre como administrador). |
+| 4 | **Reserva sin cobro en línea** | Alternativa operativa mientras no haya pasarela: pago en el local o reserva gratuita (se quita el formulario de tarjeta y la reserva queda `confirmada` sin cobro). |
+
+## ⚠️ Limitaciones conocidas (estado actual)
+
+Funciona de punta a punta: acceso (usuario, correo y Google), registro con validaciones de DNI y usuario, estados de cuenta, recuperación de contraseña, Mi perfil, CRUD de usuarios, canchas, clases e inscripciones, reservas con bloqueo de bloque, cancelar y reprogramar, inscripción con cupo y panel ERP con indicadores. Lo siguiente está incompleto y es parte de la hoja de ruta:
+
+| Flujo | Estado actual | Nota |
+|-------|---------------|------|
+| **Pago de reservas** | **Simulado.** La pantalla valida el formato de la tarjeta en el navegador, pero no se envía a ningún proveedor y no existe tabla de pagos; la reserva se confirma sin cobro. Los métodos PayPal y Webpay son solo etiquetas. | Fase 2 (sandbox) o fase 4 (sin cobro en línea) |
+| **Pago de clases** | La clase tiene precio, pero la inscripción no cobra. | Fase 2 |
+| **Rol entrenador** | Se puede asignar a clases, pero no tiene ambiente propio: ve lo mismo que un cliente y no puede consultar sus clases ni sus alumnos (solo el administrador). | Pendiente |
+| **Estados de reserva** | El flujo normal crea reservas `confirmada`; `pendiente` y `completada` solo se asignan a mano desde el panel admin (las pasadas se clasifican por fecha, pero el estado no cambia solo). | Fase 2 (`pendiente` con pago) |
+| **Reembolsos y cancelación** | El mensaje habla de "créditos CourtHub", pero no existen créditos ni se aplica la regla de las 24 horas del reglamento. | Pendiente |
+| **Horarios por cancha** | La tabla `disponibilidad_canchas` existe pero no se usa: todas las canchas tienen los mismos bloques (08:00 a 23:00). | Pendiente |
+| **Correo** | Solo se usa para recuperar contraseña; no hay confirmación de reserva ni recordatorios. | Fase 3 |
+| **Botón Apple, campana de notificaciones, "Recordarme", interruptor "Disponible Hoy", Soporte y términos y condiciones** | Elementos visuales sin función (muestran un aviso o no hacen nada). | Pendiente |
+| **Pruebas automatizadas** | No hay tests en el repositorio; la verificación se hizo con scripts de humo contra la aplicación en ejecución. | Pendiente |
+| **Límite de intentos de login** | No existe bloqueo por intentos fallidos ni *rate limiting*. | Pendiente |
 
 ## 🗄️ Consultas SQL de evidencia
 

@@ -48,6 +48,12 @@ services:
       GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID:-}
       GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET:-}
       # Opcional: sobrescribir las claves del seed (en producción son obligatorias, ver README)
+      # Correo SMTP para recuperar contraseña (opcional; sin MAIL_HOST el enlace sale en el log)
+      MAIL_HOST: ${MAIL_HOST:-}
+      MAIL_PORT: ${MAIL_PORT:-587}
+      MAIL_USERNAME: ${MAIL_USERNAME:-}
+      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
+      MAIL_FROM: ${MAIL_FROM:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-}
     ports:

@@ -47,13 +47,15 @@ public class AuthViewController {
     @GetMapping("/login")
     public String login(@AuthenticationPrincipal AuthUser usuario, @RequestParam(defaultValue = "login") String tab,
                         @RequestParam(required = false) String salir, @RequestParam(required = false) String registrado,
-                        @RequestParam(required = false) String google, Model model) {
+                        @RequestParam(required = false) String google,
+                        @RequestParam(required = false) String clave, Model model) {
         if (usuario != null) return "redirect:" + destino(usuario);
         model.addAttribute("tab", tab);
         if (!model.containsAttribute("loginForm")) model.addAttribute("loginForm", new LoginForm());
         if (!model.containsAttribute("registroForm")) model.addAttribute("registroForm", new RegistroForm());
         if (salir != null) model.addAttribute("info", "Sesión cerrada correctamente.");
         if (registrado != null) model.addAttribute("info", AuthService.MSG_REGISTRO_OK);
+        if (clave != null) model.addAttribute("info", "Contraseña actualizada. Ya puedes iniciar sesión con la nueva.");
         if (google != null) {
             model.addAttribute("loginError", switch (google) {
                 case "pendiente" -> "Tu cuenta de Google quedó registrada en estado pendiente. " + AuthService.MSG_PENDIENTE;

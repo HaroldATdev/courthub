@@ -165,3 +165,16 @@ CREATE TABLE IF NOT EXISTS niveles_clase (
 INSERT INTO niveles_clase (nombre, orden) VALUES
   ('Todos los niveles', 1), ('Principiante', 2), ('Intermedio', 3), ('Avanzado', 4)
 ON CONFLICT (nombre) DO NOTHING;
+
+-- ============================================================
+-- 9) CLAVES_RESET — recuperación de contraseña por correo (solo se guarda el hash del token)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS claves_reset (
+  id             SERIAL PRIMARY KEY,
+  usuario_id     INTEGER     NOT NULL REFERENCES usuarios (id) ON DELETE CASCADE,
+  token_hash     VARCHAR(64) NOT NULL UNIQUE,
+  expira         TIMESTAMPTZ NOT NULL,
+  usado          BOOLEAN     NOT NULL DEFAULT FALSE,
+  fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_claves_reset_usuario ON claves_reset (usuario_id);
