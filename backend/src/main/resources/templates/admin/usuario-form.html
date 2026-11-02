@@ -35,7 +35,7 @@
                 <option value="activo">Activo</option>
                 <option value="anulado">Anulado</option>
               </select></div>
-            <div><label class="ch-label">Teléfono</label><input type="text" th:field="*{telefono}" class="ch-input ch-input-plain" placeholder="+51 9 ..."></div>
+            <div><label class="ch-label">Teléfono</label><input type="text" th:field="*{telefono}" class="ch-input ch-input-plain" placeholder="987 654 321"></div>
             <div><label class="ch-label">Nivel</label>
               <select th:field="*{nivel}" class="ch-select !w-full !py-2.5">
                 <option th:each="n : ${ {'Bronce','Plata','Oro'} }" th:value="${n}" th:text="${n}"></option>

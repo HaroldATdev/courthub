@@ -41,7 +41,7 @@
             <div><label class="ch-label">Nombres</label><input type="text" th:field="*{nombre}" class="ch-input ch-input-plain" autocomplete="given-name"></div>
             <div><label class="ch-label">Apellidos</label><input type="text" th:field="*{apellido}" class="ch-input ch-input-plain" autocomplete="family-name"></div>
             <div class="sm:col-span-2"><label class="ch-label">Correo electrónico</label><input type="email" th:value="${cuenta.email}" class="ch-input ch-input-plain bg-gray-50 text-gray-500" readonly><p class="text-[11px] text-gray-400 mt-1">El correo identifica tu cuenta y no se puede cambiar.</p></div>
-            <div><label class="ch-label">Teléfono / celular</label><input type="tel" th:field="*{telefono}" class="ch-input ch-input-plain" placeholder="+51 9 ..." autocomplete="tel"></div>
+            <div><label class="ch-label">Teléfono / celular</label><input type="tel" th:field="*{telefono}" class="ch-input ch-input-plain" placeholder="987 654 321" autocomplete="tel"></div>
             <div><label class="ch-label">Nivel</label>
               <select th:field="*{nivel}" class="ch-select !w-full !py-2.5">
                 <option th:each="n : ${ {'Bronce','Plata','Oro'} }" th:value="${n}" th:text="${n}"></option>

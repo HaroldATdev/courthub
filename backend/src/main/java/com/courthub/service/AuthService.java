@@ -6,6 +6,7 @@ import com.courthub.exception.ApiException;
 import com.courthub.model.Usuario;
 import com.courthub.repository.UsuarioRepository;
 import com.courthub.security.AuthUser;
+import com.courthub.util.Telefono;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -133,7 +134,7 @@ public class AuthService {
         u.setUsuario(usuario);
         u.setNombre(f.getNombre().trim());
         u.setApellido(f.getApellido().trim());
-        u.setTelefono(f.getTelefono() == null ? "" : f.getTelefono().trim());
+        u.setTelefono(Telefono.normalizar(f.getTelefono()));
         u.setNivel(f.getNivel() == null || f.getNivel().isBlank() ? "Bronce" : f.getNivel().trim());
         u.setDeporteFavorito(f.getDeporteFavorito() == null || f.getDeporteFavorito().isBlank() ? "Multi" : f.getDeporteFavorito().trim());
         return usuarios.save(u);

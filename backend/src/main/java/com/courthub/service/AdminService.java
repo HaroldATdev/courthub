@@ -11,6 +11,7 @@ import com.courthub.repository.ClaseRepository;
 import com.courthub.repository.InscripcionRepository;
 import com.courthub.exception.ApiException;
 import com.courthub.util.Horarios;
+import com.courthub.util.Telefono;
 import com.courthub.model.Reserva;
 import com.courthub.dto.ReservaDtos.ReservaDto;
 import com.courthub.repository.ReservaRepository;
@@ -228,7 +229,7 @@ public class AdminService {
         u.setEmail(req.email().trim().toLowerCase());
         u.setRol(ROLES.contains(req.rol()) ? req.rol() : AuthUser.CLIENTE);
         u.setEstado(ESTADOS_USUARIO.contains(req.estado()) ? req.estado() : Usuario.PENDIENTE);
-        u.setTelefono(req.telefono() == null ? "" : req.telefono().trim());
+        u.setTelefono(Telefono.normalizar(req.telefono()));
         u.setNivel(req.nivel() == null || req.nivel().isBlank() ? "Bronce" : req.nivel().trim());
         u.setDeporteFavorito(req.deporteFavorito() == null || req.deporteFavorito().isBlank() ? "Multi" : req.deporteFavorito().trim());
     }
