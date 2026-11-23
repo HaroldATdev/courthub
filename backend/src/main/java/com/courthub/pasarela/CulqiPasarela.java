@@ -61,8 +61,9 @@ public class CulqiPasarela implements PasarelaPago {
                         String texto = new String(res.getBody().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
                         return (res.getStatusCode().is2xxSuccessful() ? "OK|" : "ERR|") + texto;
                     });
-            JsonNode n = json.readTree(respuesta.substring(4));
-            if (respuesta.startsWith("OK|") && n.hasNonNull("id")) {
+            boolean exito = respuesta.startsWith("OK|");
+            JsonNode n = json.readTree(respuesta.substring(respuesta.indexOf('|') + 1));   // "OK|{...}" o "ERR|{...}"
+            if (exito && n.hasNonNull("id")) {
                 String ultimos4 = n.path("source").path("last_four").asText(null);
                 return Resultado.ok(n.get("id").asText(), ultimos4);
             }

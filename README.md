@@ -187,7 +187,7 @@ El primer arranque tarda unos minutos (Maven descarga dependencias). La base de 
 
 > El login acepta el **nombre de usuario o el correo**. Las cuentas de **cliente** (registro normal o Google) nacen en estado **activo** y entran de inmediato. Quien se registra con el perfil **administrador** queda **pendiente** hasta que otro administrador lo active en *Administración → Usuarios* (si no, cualquiera podría darse acceso total al panel).
 >
-> **Pagos:** cada reserva cobrada deja un registro en la tabla `pagos` (número de operación, método, últimos 4 dígitos de la tarjeta, subtotal, cargo, monto, estado `aprobado`/`reembolsado`, proveedor). Al cancelar la reserva el pago pasa a `reembolsado`. El proveedor es `simulado` hasta integrar una pasarela.
+> **Pagos:** cada reserva cobrada deja un registro en la tabla `pagos` (número de operación, método, últimos 4 dígitos de la tarjeta, subtotal, cargo, monto, estado `aprobado`/`reembolsado`, proveedor). Al cancelar la reserva el pago pasa a `reembolsado`. El proveedor es `simulado` sin llaves, o `culqi` con las llaves de prueba (ver *Pagos en sandbox*). Las inscripciones a clases de pago también se cobran y generan boleta.
 >
 > **Cierre del flujo de venta (entrega final):**
 > - **Boleta en PDF:** cada reserva cobrada tiene su boleta (`GET /reservas/{id}/boleta`, serie `B001`, número correlativo, datos del cliente, detalle, op. gravada, IGV 18 % y total). La descarga el dueño de la reserva desde *Mis reservas → Boleta PDF* o el administrador desde *Reservas*. Es un comprobante de demostración: no se envía a SUNAT. Los datos del emisor se configuran con `courthub.emisor.razon-social`, `courthub.emisor.ruc` y `courthub.emisor.direccion`.
@@ -223,7 +223,8 @@ mvn spring-boot:run            # http://localhost:8080
 | Método | Ruta                               | Controlador → Vista                              |
 |--------|------------------------------------|--------------------------------------------------|
 | GET    | `/login` · `/logout`               | `AuthViewController` → `index`                   |
-| POST   | `/login` · `/registro`             | Autentica, guarda el JWT en cookie y redirige    |
+| POST   | `/login` · `/registro`             | Autentica, guarda el JWT en cookie y redirige (con 2FA activo, pide antes el código) |
+| POST   | `/login/verificar` · `/login/reenviar` | Segundo paso: valida / reenvía el código del correo → `verificar-2fa` |
 | GET    | `/dashboard`                       | `CanchaViewController` → `dashboard` 🔒          |
 | GET    | `/canchas/{id}`                    | `CanchaViewController` → `cancha-detalle` 🔒     |
 | GET    | `/pago?canchaId&fecha&hora`        | `ReservaViewController` → `pago` 🔒              |
@@ -231,7 +232,12 @@ mvn spring-boot:run            # http://localhost:8080
 | GET    | `/mis-reservas?tab`                | `ReservaViewController` → `mis-reservas` 🔒      |
 | POST   | `/reservas/{id}/cancelar` · `/reservas/{id}/reprogramar` | Cambia la reserva y redirige 🔒 |
 | GET    | `/clases?deporte`                  | `ClaseViewController` → `clases` 🔒              |
-| POST   | `/clases/{id}/inscribirse` · `/clases/{id}/abandonar` | Inscripción y redirige 🔒         |
+| GET    | `/clases/{id}/pago`                | `ClaseViewController` → `pago-clase` (clases de pago) 🔒 |
+| POST   | `/clases/{id}/inscribirse` · `/clases/{id}/abandonar` | Inscripción (con cobro si tiene precio) y anulación con reembolso 🔒 |
+| GET    | `/reservas/{id}/boleta` · `/clases/{id}/boleta` · `/boletas/{pagoId}` | Boleta de venta en PDF 🔒 |
+| GET    | `/entrenador` · `/entrenador/clases/{id}` | `EntrenadorViewController` → `entrenador/*` (solo perfil entrenador) |
+| POST   | `/entrenador/clases/{id}/inscripciones/{iid}/asistencia` | Marca o desmarca la asistencia de un alumno |
+| GET    | `/admin/ventas` · `/admin/ventas/exportar` | Reporte de ventas por mes y año (+ CSV) 🔐 |
 | GET    | `/admin`                           | `AdminViewController` → `admin/resumen` 🔐       |
 | GET/POST | `/admin/reservas`, `/admin/canchas`, `/admin/clases`, `/admin/inscripciones`, `/admin/usuarios` (+ `/nueva`, `/{id}/editar`, `/{id}/estado`, `/exportar`) | Mantenimientos del ERP 🔐 |
 
@@ -241,7 +247,8 @@ mvn spring-boot:run            # http://localhost:8080
 |--------|--------------------------------------------|-----------------------------------------------|
 | GET    | `/api/health`                              | Estado de la aplicación                       |
 | POST   | `/api/auth/register`                       | Registro (dni, nombre, apellido, usuario, email, password, rol) → cliente **activo**; administrador **pendiente** |
-| POST   | `/api/auth/login`                          | Login por `usuario` (nombre de usuario o correo) + `password` → **JWT** (solo cuentas activas) |
+| POST   | `/api/auth/login`                          | Login por `usuario` (nombre de usuario o correo) + `password` → **JWT** (solo cuentas activas). Con 2FA activo devuelve `{requiere2fa, desafio}` |
+| POST   | `/api/auth/2fa`                            | `desafio` + `codigo` recibido por correo → **JWT** |
 | GET    | `/api/auth/me`                             | Perfil del usuario autenticado 🔒             |
 | GET    | `/api/canchas?tipo=&q=&comuna=&precioMin=&precioMax=` | Listado de canchas con filtros 🔒  |
 | GET    | `/api/canchas/{id}` · `/api/canchas/{id}/disponibilidad?fecha=` | Detalle y bloques libres 🔒 |
@@ -264,7 +271,7 @@ mvn spring-boot:run            # http://localhost:8080
 | 2 | **Enlace de registro** al pie del login con *dni, nombres, apellidos, usuario, clave, perfil, estado* | El enlace "¿No tienes una cuenta? Regístrate aquí" abre el formulario `POST /registro`. Perfil: `cliente` o `administrador`. Estado por defecto **activo** para clientes (campo de solo lectura); el perfil administrador queda **pendiente** hasta que otro administrador lo active; también existe `anulado` | `templates/index.html`, `Formularios.RegistroForm`, `AuthService.registrar` |
 | 2a | Validación por **DNI** repetido | `usuarios.existsByDni` → "El DNI … ya está registrado" + índice único parcial `uq_usuarios_dni` en la BD | `AuthService`, `db/schema.sql` |
 | 2b | Validación por **usuario** repetido | `usuarios.existsByUsuarioIgnoreCase` → "El nombre de usuario … ya está en uso" + índice único `uq_usuarios_usuario (LOWER(usuario))` | `AuthService`, `db/schema.sql` |
-| 3 | **Redirección según perfil** al iniciar sesión | `administrador` → `/admin` (panel ERP) · `cliente`/`entrenador` → `/dashboard`. Las cuentas `pendiente` o `anulado` reciben un mensaje y no entran | `AuthViewController.iniciarSesion` |
+| 3 | **Redirección según perfil** al iniciar sesión | `administrador` → `/admin` (panel ERP) · `entrenador` → `/entrenador` · `cliente` → `/dashboard`. Las cuentas `pendiente` o `anulado` reciben un mensaje y no entran | `AuthViewController.iniciarSesion` |
 | 4 | **CRUD de usuarios** en el perfil administrador | Listado con filtros por perfil, estado y búsqueda (DNI, usuario, nombre, correo); crear, editar (formulario `th:object`), cambiar estado (**Activar / Pendiente / Anular**) y exportar CSV, con las mismas validaciones de DNI/usuario únicos | `/admin/usuarios`, `AdminViewController`, `AdminService` |
 | 5 | **Listas desplegables desde tablas de la BD** en los dos CRUD del 2.º avance | Tabla `deportes` → select *Deporte* en **canchas** y **clases**; tabla `niveles_clase` → select *Nivel* en **clases**. Se cargan en `GlobalModelAttributes` vía `CatalogoService` y el servicio rechaza valores que no existan en el catálogo | `db/schema.sql`, `model/Deporte`, `model/NivelClase`, `admin/cancha-form.html`, `admin/clase-form.html` |
 
@@ -307,31 +314,63 @@ Cómo se hizo (para reproducirlo):
 
 > El plan gratuito de Render "duerme" el servicio tras 15 minutos sin tráfico: la primera visita puede tardar unos 30 segundos en despertar.
 
-## 🧭 Hoja de ruta (siguiente entrega)
+## 💳 Pagos en sandbox (Culqi)
 
-| Fase | Entregable | Detalle |
-|------|------------|---------|
-| 1 | **Migración de la base de datos a Supabase** | Pasar PostgreSQL de Render a Supabase (también PostgreSQL 16). Solo cambian las variables `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` y `PGDATABASE`; el esquema (`schema.sql`) y el seed se ejecutan igual al arrancar. Ventajas: la base gratuita no caduca a los 30 días como la de Render y trae panel web para ver tablas y ejecutar SQL durante la exposición. |
-| 2 | **Pagos en modo sandbox** | Tabla `pagos` (reserva, proveedor, id de transacción, monto, estado, fecha) y `PagoService`. La reserva nace `pendiente` y pasa a `confirmada` cuando la pasarela confirma el cobro por **webhook con verificación de firma**; un proceso programado (`@Scheduled`) libera las reservas no pagadas a los 15 minutos. El cliente paga en el checkout del proveedor (Culqi o Mercado Pago, con Yape y tarjeta): CourtHub nunca ve ni guarda datos de tarjeta. Se demuestra con tarjetas de prueba, sin mover dinero real. |
-| 3 | **Verificación en dos pasos por correo (2FA)** | Código de un solo uso enviado al correo (reutiliza el envío SMTP ya implementado). Con el correo verificado, los clientes ya no necesitarían la aprobación manual del administrador (que se mantendría para quien se registre como administrador). |
-| 4 | **Reserva sin cobro en línea** | Alternativa operativa mientras no haya pasarela: pago en el local o reserva gratuita (se quita el formulario de tarjeta y la reserva queda `confirmada` sin cobro). |
+El cobro pasa por una **pasarela** intercambiable (`pasarela/PasarelaPago`), elegida por configuración:
+
+| Modo | Cuándo | Qué hace |
+|------|--------|----------|
+| **Simulada** (por defecto) | Sin `CULQI_SECRET_KEY` | No se envía nada a ningún banco. Valida la tarjeta y aprueba, salvo las **tarjetas de prueba de rechazo** (p. ej. `4000 0400 0000 0008`, fondos insuficientes), que se rechazan con su motivo. |
+| **Culqi sandbox** | Con `CULQI_PUBLIC_KEY` (`pk_test_…`) y `CULQI_SECRET_KEY` (`sk_test_…`) | La tarjeta se escribe en la ventana de **Culqi Checkout** y el navegador recibe un *token*; el servidor solo recibe ese token y crea el cargo (`POST /v2/charges`) con la llave privada. **El número de tarjeta nunca pasa por CourtHub.** El monto se recalcula en el servidor (en céntimos). |
+
+- Alcance: reservas de cancha (subtotal + 10 % de cargo) e inscripciones a clases (precio de la clase). Cada pago aprobado queda en `pagos` con proveedor, referencia del cargo (`chr_test_…`) y los últimos 4 dígitos. Si la pasarela **rechaza** el pago, no queda ni la reserva/inscripción ni el pago (misma transacción) y se muestra el motivo.
+- Llaves: se crean en el panel de integración de Culqi (**Desarrollo → API Keys**) y se guardan **solo** en variables de entorno (Render → Environment). Nunca en el repositorio.
+- Tarjetas de prueba de Culqi: aprobada `4111 1111 1111 1111` (09/30, CVV 123); rechazadas, p. ej. `4000 0400 0000 0008` (fondos insuficientes) y `4000 0200 0000 0000` (robada).
+- **Verificación realizada:** la integración se probó contra un servidor que imita las respuestas documentadas de Culqi (cargo aprobado, cargo rechazado, token ausente, monto en céntimos, llave privada fuera de la página). **No se ha probado contra el sandbox real de Culqi**: falta hacerlo con llaves de prueba propias; el formato exacto de la respuesta de error del API real no se pudo confirmar en su documentación.
+
+## ✉️ Correo y verificación en dos pasos (2FA)
+
+**Verificación en dos pasos:** tras validar usuario y clave, se envía un **código de 6 dígitos al correo** de la cuenta y solo con él se emite la sesión (pantalla `/login/verificar`; en la API: `POST /api/auth/login` devuelve `{requiere2fa, desafio}` y `POST /api/auth/2fa` entrega el JWT). El código y el desafío se guardan solo como hash (`verificaciones_2fa`), vencen a los 10 minutos, son de un solo uso y admiten 5 intentos; se puede reenviar un código nuevo cada 60 segundos. Con esto el correo queda comprobado en cada acceso y los clientes ya nacen activos sin aprobación del administrador. El acceso con Google no pide código (Google ya autentica).
+
+**Se activa sola solo si hay proveedor de correo** (`BREVO_API_KEY` o `MAIL_HOST`) y `TWOFA_ENABLED` no es `false`: sin correo no habría forma de entregar el código y nadie podría entrar. Si el proveedor falla, el login muestra un aviso y no entra. **Salida de emergencia:** poner `TWOFA_ENABLED=false` en las variables de entorno y redesplegar.
+
+**Proveedores de correo** (en este orden de prioridad):
+
+1. **API HTTPS de Brevo** (`BREVO_API_KEY`, `MAIL_FROM` = remitente verificado en Brevo; plan gratuito de 300 correos/día). Usa el puerto 443, que nunca se bloquea. **Es la opción recomendada en Render.**
+2. **SMTP** (`MAIL_HOST`, `MAIL_PORT`, `MAIL_USERNAME`, `MAIL_PASSWORD`; con Gmail, `smtp.gmail.com` y una *contraseña de aplicación*). Render puede **bloquear los puertos SMTP (25, 465 y 587) en el plan gratuito**: si el correo no sale aunque la configuración sea correcta, hay que pasar a Brevo.
+3. Sin proveedor: el mensaje (p. ej. el enlace de recuperación) solo se escribe en el log del servidor y el 2FA queda apagado.
+
+## 🧑‍🏫 Ambiente del entrenador
+
+Los usuarios con perfil `entrenador` entran a `/entrenador` (solo ese perfil; el administrador y los clientes reciben *acceso denegado*): resumen con sus clases próximas y anteriores, alumnos inscritos, asistencias y lo cobrado por sus clases; lista de alumnos de cada clase (correo, teléfono, pago) y **control de asistencia** (marcar/desmarcar). Solo ve las clases que le asignó el administrador; la clase de otro entrenador responde 404. Quien ya asistió sigue contando como inscrito (no puede pagar dos veces).
+
+## 🗄️ Base de datos en Supabase y RLS
+
+La base de datos de producción está en **Supabase** (PostgreSQL); la aplicación solo cambió las variables `PGHOST`, `PGPORT`, `PGUSER`, `PGPASSWORD` y `PGDATABASE` (con el *Session pooler*, porque Render usa IPv4). `schema.sql` activa **RLS (Row Level Security)** en todas las tablas: la aplicación se conecta como propietario y no se ve afectada, pero las claves públicas de la API REST de Supabase (`anon`/`authenticated`) quedan sin acceso a ninguna tabla.
+
+## 🧭 Hoja de ruta (lo que sigue)
+
+| Pendiente | Detalle |
+|-----------|---------|
+| **Probar Culqi contra su sandbox real** | Crear cuenta de integración, cargar `CULQI_PUBLIC_KEY`/`CULQI_SECRET_KEY` en Render y hacer una reserva con la tarjeta de prueba. |
+| **Reembolso real** | Hoy cancelar marca el pago como `reembolsado` en la base, pero no devuelve el dinero en Culqi (faltaría `POST /refunds`). |
+| **Billeteras y 3-D Secure** | Yape/Plin y autenticación 3DS de Culqi. |
+| **Más correos** | Confirmación de reserva y recordatorios (el envío ya existe). |
+| **Entrenador crea sus clases** | Hoy el administrador las crea y las asigna. |
 
 ## ⚠️ Limitaciones conocidas (estado actual)
 
-Funciona de punta a punta: acceso (usuario, correo y Google), registro con validaciones de DNI y usuario, estados de cuenta, recuperación de contraseña, Mi perfil, CRUD de usuarios, canchas, clases e inscripciones, reservas con bloqueo de bloque, cancelar y reprogramar, inscripción con cupo y panel ERP con indicadores. Lo siguiente está incompleto y es parte de la hoja de ruta:
+Funciona de punta a punta: acceso (usuario, correo y Google) con verificación en dos pasos cuando hay correo, registro con validaciones de DNI y usuario, recuperación de contraseña, Mi perfil, CRUD de usuarios, canchas, clases e inscripciones, reservas con bloqueo de bloque, cobro de reservas y clases (pasarela simulada o Culqi sandbox), boleta en PDF, reporte de ventas por mes y año, ambiente del entrenador y panel ERP. Lo siguiente está incompleto:
 
-| Flujo | Estado actual | Nota |
-|-------|---------------|------|
-| **Pago de reservas** | **Registrado pero simulado.** Cada reserva deja su cobro en la tabla `pagos` (proveedor `simulado`), pero la tarjeta no se envía a ninguna pasarela y no se mueve dinero. Los métodos PayPal y Webpay son solo etiquetas. | Fase 2 (sandbox) |
-| **Pago de clases** | La clase tiene precio, pero la inscripción no cobra. | Fase 2 |
-| **Rol entrenador** | Se puede asignar a clases, pero no tiene ambiente propio: ve lo mismo que un cliente y no puede consultar sus clases ni sus alumnos (solo el administrador). | Pendiente |
-| **Estados de reserva** | El flujo normal crea reservas `confirmada` y pasan solas a `completada` al terminar el bloque. `pendiente` solo se asigna a mano desde el panel admin (con una pasarela real sería el estado previo al pago). | Fase 2 (`pendiente` con pago) |
-| **Reembolsos y cancelación** | El mensaje habla de "créditos CourtHub", pero no existen créditos ni se aplica la regla de las 24 horas del reglamento. | Pendiente |
-| **Horarios por cancha** | La tabla `disponibilidad_canchas` existe pero no se usa: todas las canchas tienen los mismos bloques (08:00 a 23:00). | Pendiente |
-| **Correo** | Solo se usa para recuperar contraseña; no hay confirmación de reserva ni recordatorios. | Fase 3 |
-| **Botón Apple, campana de notificaciones, "Recordarme", interruptor "Disponible Hoy", Soporte y términos y condiciones** | Elementos visuales sin función (muestran un aviso o no hacen nada). | Pendiente |
-| **Pruebas automatizadas** | No hay tests en el repositorio; la verificación se hizo con scripts de humo contra la aplicación en ejecución. | Pendiente |
-| **Límite de intentos de login** | No existe bloqueo por intentos fallidos ni *rate limiting*. | Pendiente |
+| Flujo | Estado actual |
+|-------|---------------|
+| **Dinero real** | No se mueve dinero: la pasarela simulada no cobra y Culqi se usa solo con llaves de **prueba**. Los métodos PayPal y Webpay (modo simulado) son solo etiquetas. |
+| **Reembolsos y cancelación** | El pago pasa a `reembolsado` en la base, pero no hay devolución en la pasarela, no existen los "créditos CourtHub" que menciona el mensaje y no se aplica la regla de las 24 horas. |
+| **Boleta** | Comprobante de demostración (serie `B001`, RUC ficticio): no se envía a SUNAT y no existe factura. |
+| **Horarios por cancha** | La tabla `disponibilidad_canchas` existe pero no se usa: todas las canchas tienen los mismos bloques (08:00 a 23:00). |
+| **Elementos sin función** | Botón Apple, campana de notificaciones, "Recordarme", interruptor "Disponible Hoy", Soporte y términos y condiciones. |
+| **Pruebas automatizadas** | No hay tests en el repositorio; la verificación se hizo con scripts contra la aplicación en ejecución. |
+| **Límite de intentos de login** | No hay bloqueo por intentos fallidos de contraseña (el código del 2FA sí limita a 5 intentos). |
 
 ## 🗄️ Consultas SQL de evidencia
 

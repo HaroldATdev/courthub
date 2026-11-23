@@ -62,6 +62,7 @@ services:
       # Pagos: sin llaves se usa la pasarela simulada; con llaves de prueba de Culqi cobra en su sandbox
       CULQI_PUBLIC_KEY: ${CULQI_PUBLIC_KEY:-}
       CULQI_SECRET_KEY: ${CULQI_SECRET_KEY:-}
+      CULQI_API_URL: ${CULQI_API_URL:-https://api.culqi.com/v2}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-}
     ports:
