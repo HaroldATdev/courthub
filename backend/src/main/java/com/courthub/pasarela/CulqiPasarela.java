@@ -68,10 +68,10 @@ public class CulqiPasarela implements PasarelaPago {
                 return Resultado.ok(n.get("id").asText(), ultimos4);
             }
             String motivo = n.path("user_message").asText(n.path("merchant_message").asText("El pago fue rechazado."));
-            log.warn("[Culqi] Cargo rechazado: {}", n.path("merchant_message").asText(motivo));
+            log.warn("[Culqi] Cargo NO aprobado. Respuesta de Culqi: {}", recortar(respuesta, 600));
             return Resultado.rechazado(motivo);
         } catch (Exception e) {
-            log.error("[Culqi] No se pudo comunicar con la pasarela: {}", e.getMessage());
+            log.error("[Culqi] Error al llamar a la pasarela ({}): {}", e.getClass().getSimpleName(), e.getMessage());
             return Resultado.rechazado("No se pudo procesar el pago en este momento. Inténtalo de nuevo en unos minutos.");
         }
     }
