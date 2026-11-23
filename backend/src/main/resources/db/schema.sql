@@ -203,3 +203,49 @@ CREATE TABLE IF NOT EXISTS pagos (
 CREATE UNIQUE INDEX IF NOT EXISTS uq_pago_reserva_aprobado ON pagos (reserva_id) WHERE estado = 'aprobado';
 CREATE INDEX IF NOT EXISTS idx_pagos_usuario ON pagos (usuario_id);
 CREATE INDEX IF NOT EXISTS idx_pagos_fecha ON pagos (fecha_pago);
+
+-- ============================================================
+-- 11) PAGOS también para inscripciones a clases + referencia de la pasarela
+--     Un pago pertenece a UNA reserva o a UNA inscripción (nunca a ambas).
+-- ============================================================
+ALTER TABLE pagos ADD COLUMN IF NOT EXISTS inscripcion_id INTEGER REFERENCES inscripciones_clases (id) ON DELETE CASCADE;
+ALTER TABLE pagos ADD COLUMN IF NOT EXISTS referencia VARCHAR(80);          -- id del cargo en la pasarela (p. ej. chr_test_...)
+ALTER TABLE pagos ALTER COLUMN reserva_id DROP NOT NULL;
+ALTER TABLE pagos DROP CONSTRAINT IF EXISTS ck_pago_origen;
+ALTER TABLE pagos ADD CONSTRAINT ck_pago_origen CHECK ((reserva_id IS NOT NULL) <> (inscripcion_id IS NOT NULL));
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pago_inscripcion_aprobado ON pagos (inscripcion_id) WHERE estado = 'aprobado';
+CREATE INDEX IF NOT EXISTS idx_pagos_inscripcion ON pagos (inscripcion_id);
+
+-- ============================================================
+-- 12) VERIFICACIONES_2FA — código de un solo uso enviado al correo en cada inicio de sesión
+--     (solo se guardan hashes: del desafío y del código; vence a los 10 min y admite 5 intentos)
+-- ============================================================
+CREATE TABLE IF NOT EXISTS verificaciones_2fa (
+  id             SERIAL PRIMARY KEY,
+  usuario_id     INTEGER     NOT NULL REFERENCES usuarios (id) ON DELETE CASCADE,
+  desafio_hash   VARCHAR(64) NOT NULL UNIQUE,
+  codigo_hash    VARCHAR(64) NOT NULL,
+  expira         TIMESTAMPTZ NOT NULL,
+  intentos       SMALLINT    NOT NULL DEFAULT 0,
+  usado          BOOLEAN     NOT NULL DEFAULT FALSE,
+  fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+CREATE INDEX IF NOT EXISTS idx_2fa_usuario ON verificaciones_2fa (usuario_id);
+
+-- ============================================================
+-- 13) SEGURIDAD (Supabase): activar RLS en todas las tablas.
+--     La aplicación se conecta como propietario de las tablas (usuario postgres), que ignora RLS,
+--     así que no cambia nada para ella; en cambio bloquea el acceso con las claves públicas de la API
+--     REST de Supabase (anon / authenticated), que no tienen ninguna política.
+-- ============================================================
+ALTER TABLE usuarios               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE canchas                ENABLE ROW LEVEL SECURITY;
+ALTER TABLE disponibilidad_canchas ENABLE ROW LEVEL SECURITY;
+ALTER TABLE reservas               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE clases                 ENABLE ROW LEVEL SECURITY;
+ALTER TABLE inscripciones_clases   ENABLE ROW LEVEL SECURITY;
+ALTER TABLE deportes               ENABLE ROW LEVEL SECURITY;
+ALTER TABLE niveles_clase          ENABLE ROW LEVEL SECURITY;
+ALTER TABLE claves_reset           ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pagos                  ENABLE ROW LEVEL SECURITY;
+ALTER TABLE verificaciones_2fa     ENABLE ROW LEVEL SECURITY;

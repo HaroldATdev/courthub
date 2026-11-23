@@ -1,6 +1,7 @@
 package com.courthub.service;
 
 import com.courthub.exception.ApiException;
+import com.courthub.model.Clase;
 import com.courthub.model.Pago;
 import com.courthub.model.Reserva;
 import com.courthub.model.Usuario;
@@ -47,6 +48,7 @@ public class BoletaService {
     private static final DateTimeFormatter FECHA_HORA = DateTimeFormatter.ofPattern("dd/MM/yyyy HH:mm");
 
     private final PagoRepository pagos;
+    private final com.courthub.repository.InscripcionRepository inscripciones;
 
     @Value("${courthub.emisor.razon-social:CourtHub S.A.C.}")
     private String razonSocial;
@@ -60,21 +62,36 @@ public class BoletaService {
     /** Resultado: nombre sugerido del archivo y su contenido. */
     public record Boleta(String nombreArchivo, byte[] pdf) {}
 
-    /** Genera la boleta de la reserva. Solo el dueño de la reserva o un administrador pueden pedirla. */
+    private static final String SIN_BOLETA = "No hay una boleta: el pago no existe o no está aprobado.";
+
+    /** Boleta de una reserva. Solo el dueño de la reserva o un administrador pueden pedirla. */
     @Transactional(readOnly = true)
     public Boleta generar(Long reservaId, AuthUser solicitante) {
-        Pago p = pagos.findFirstByReservaIdAndEstadoInOrderByIdDesc(reservaId, List.of(Pago.APROBADO))
-                .orElseThrow(() -> ApiException.notFound("No hay una boleta para esta reserva: no tiene un pago aprobado."));
+        return de(pagos.findFirstByReservaIdAndEstadoInOrderByIdDesc(reservaId, List.of(Pago.APROBADO)), solicitante);
+    }
+
+    /** Boleta de la inscripción del propio usuario a una clase. */
+    @Transactional(readOnly = true)
+    public Boleta generarDeClase(Long claseId, AuthUser solicitante) {
+        var inscripcion = inscripciones.findByClaseIdAndUsuarioId(claseId, solicitante.id());
+        return de(inscripcion.flatMap(i -> pagos.findFirstByInscripcionIdAndEstadoInOrderByIdDesc(i.getId(), List.of(Pago.APROBADO))), solicitante);
+    }
+
+    /** Boleta por número de pago (la usa el reporte de ventas del administrador). */
+    @Transactional(readOnly = true)
+    public Boleta generarPorPago(Long pagoId, AuthUser solicitante) {
+        return de(pagos.findWithOrigenById(pagoId).filter(p -> Pago.APROBADO.equals(p.getEstado())), solicitante);
+    }
+
+    private Boleta de(java.util.Optional<Pago> pago, AuthUser solicitante) {
+        Pago p = pago.orElseThrow(() -> ApiException.notFound(SIN_BOLETA));
         boolean esDueno = p.getUsuario().getId().equals(solicitante.id());
-        if (!esDueno && !solicitante.esAdmin()) {
-            throw ApiException.notFound("No hay una boleta para esta reserva: no tiene un pago aprobado.");
-        }
+        if (!esDueno && !solicitante.esAdmin()) throw ApiException.notFound(SIN_BOLETA);
         String numero = SERIE + "-" + String.format("%08d", p.getId());
         return new Boleta("boleta-" + numero + ".pdf", render(p, numero));
     }
 
     private byte[] render(Pago p, String numero) {
-        Reserva r = p.getReserva();
         Usuario u = p.getUsuario();
         BigDecimal total = p.getMonto();
         BigDecimal base = total.divide(IGV, 2, RoundingMode.HALF_UP);
@@ -137,15 +154,23 @@ public class BoletaService {
             desc.setPadding(7);
             desc.setBorder(Rectangle.BOTTOM);
             desc.setBorderColor(Color.LIGHT_GRAY);
-            desc.addElement(new Paragraph("Reserva " + r.getCodigo() + " · " + r.getCancha().getNombre(), normal));
-            desc.addElement(new Paragraph(r.getFecha().format(FECHA) + " de " + r.getHoraInicio() + " a " + r.getHoraFin() + " (bloque de 1.5 h)", tenue));
+            if (p.esDeReserva()) {
+                Reserva r = p.getReserva();
+                desc.addElement(new Paragraph("Reserva " + r.getCodigo() + " · " + r.getCancha().getNombre(), normal));
+                desc.addElement(new Paragraph(r.getFecha().format(FECHA) + " de " + r.getHoraInicio() + " a " + r.getHoraFin() + " (bloque de 1.5 h)", tenue));
+            } else {
+                Clase k = p.getInscripcion().getClase();
+                desc.addElement(new Paragraph("Inscripción a clase: " + k.getNombre(), normal));
+                desc.addElement(new Paragraph(k.getFecha().format(FECHA) + " de " + k.getHoraInicio() + " a " + k.getHoraFin(), tenue));
+            }
             det.addCell(desc);
             det.addCell(celda("1", Element.ALIGN_CENTER, normal, true));
             det.addCell(celda(dinero(p.getSubtotal()), Element.ALIGN_RIGHT, normal, true));
-            PdfPCell cs = celda("Cargo por servicio (10 %)", Element.ALIGN_LEFT, normal, true);
-            det.addCell(cs);
-            det.addCell(celda("1", Element.ALIGN_CENTER, normal, true));
-            det.addCell(celda(dinero(p.getCargoServicio()), Element.ALIGN_RIGHT, normal, true));
+            if (p.getCargoServicio().signum() > 0) {
+                det.addCell(celda("Cargo por servicio (10 %)", Element.ALIGN_LEFT, normal, true));
+                det.addCell(celda("1", Element.ALIGN_CENTER, normal, true));
+                det.addCell(celda(dinero(p.getCargoServicio()), Element.ALIGN_RIGHT, normal, true));
+            }
             doc.add(det);
 
             // Totales con IGV desglosado

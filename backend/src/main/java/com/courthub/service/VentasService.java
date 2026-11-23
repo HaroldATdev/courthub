@@ -32,7 +32,7 @@ public class VentasService {
     }
 
     /** Una venta del detalle (para la tabla y el CSV). */
-    public record Venta(Long reservaId, String boleta, String codigo, String operacion, ZonedDateTime fecha, String cliente, String cancha,
+    public record Venta(Long pagoId, String boleta, String tipo, String concepto, String operacion, ZonedDateTime fecha, String cliente,
                         String metodo, BigDecimal subtotal, BigDecimal cargo, BigDecimal total, String estado) {}
 
     public record Reporte(int anio, int mes, List<Integer> anios, List<Periodo> porMes, List<Periodo> porAnio,
@@ -67,10 +67,13 @@ public class VentasService {
 
         List<Venta> detalle = todos.stream()
                 .filter(p -> Pago.APROBADO.equals(p.getEstado()) && enPeriodo(p, a, m))
-                .map(p -> new Venta(p.getReserva().getId(), BoletaService.SERIE + "-" + String.format("%08d", p.getId()), p.getReserva().getCodigo(), p.getOperacion(), fecha(p),
+                .map(p -> new Venta(p.getId(), BoletaService.SERIE + "-" + String.format("%08d", p.getId()),
+                        p.esDeReserva() ? "Reserva" : "Clase",
+                        p.esDeReserva() ? p.getReserva().getCodigo() + " · " + p.getReserva().getCancha().getNombre()
+                                        : p.getInscripcion().getClase().getNombre(),
+                        p.getOperacion(), fecha(p),
                         (p.getUsuario().getNombre() + " " + p.getUsuario().getApellido()).trim(),
-                        p.getReserva().getCancha().getNombre(), p.getMetodo(),
-                        p.getSubtotal(), p.getCargoServicio(), p.getMonto(), p.getEstado()))
+                        p.getMetodo(), p.getSubtotal(), p.getCargoServicio(), p.getMonto(), p.getEstado()))
                 .toList();
 
         return new Reporte(a, m, new ArrayList<>(anios.descendingSet()), porMes, porAnio, periodo,

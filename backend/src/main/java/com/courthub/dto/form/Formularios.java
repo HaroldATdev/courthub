@@ -53,6 +53,20 @@ public final class Formularios {
         private String numeroTarjeta;
         private String vencimiento;
         private String cvv;
+        private String tokenCulqi;   // solo con Culqi: token de la tarjeta generado en el navegador
+        private boolean terminos;
+    }
+
+    /** Pago de la inscripción a una clase (mismos campos de pago que la reserva). */
+    @Data
+    public static class ClasePagoForm {
+        private String deporte = "todos";
+        private String metodoPago = "Tarjeta de Crédito";
+        private String nombreTarjeta;
+        private String numeroTarjeta;
+        private String vencimiento;
+        private String cvv;
+        private String tokenCulqi;
         private boolean terminos;
     }
 

@@ -44,14 +44,17 @@
         </div>
         <div class="flex items-center justify-between pt-3.5 border-t border-gray-100">
           <p class="font-display font-bold text-slate-900"><span th:text="${@fmt.pen(k.precio)}"></span><span class="text-xs text-gray-400 font-sans font-normal"> /clase</span></p>
+          <a th:if="${k.inscrito and k.precio.signum() gt 0}" th:href="@{/clases/{id}/boleta(id=${k.id})}" target="_blank" rel="noopener" class="btn-outline !px-3 !py-2 !text-[13px]">Boleta PDF</a>
           <form th:if="${k.inscrito}" th:action="@{/clases/{id}/abandonar(id=${k.id})}" method="post">
             <input type="hidden" name="deporte" th:value="${deporte}">
             <button type="submit" class="btn-outline !text-primary-600 !border-primary-300 !bg-primary-50"><span data-icon="check" data-cls="w-4 h-4"></span>Inscrito — Salir</button>
           </form>
           <button th:if="${!k.inscrito and k.cuposDisponibles le 0}" type="button" class="btn-outline opacity-50 cursor-not-allowed" disabled>Cupo lleno</button>
-          <form th:if="${!k.inscrito and k.cuposDisponibles gt 0}" th:action="@{/clases/{id}/inscribirse(id=${k.id})}" method="post">
+          <!-- Clase de pago: lleva a la pantalla de pago; clase gratuita: se inscribe directamente -->
+          <a th:if="${!k.inscrito and k.cuposDisponibles gt 0 and k.precio.signum() gt 0}" th:href="@{/clases/{id}/pago(id=${k.id}, deporte=${deporte})}" class="btn-primary !px-4 !py-2 !text-[13px]">Pagar e inscribirme <span data-icon="arrowRight" data-cls="w-4 h-4"></span></a>
+          <form th:if="${!k.inscrito and k.cuposDisponibles gt 0 and k.precio.signum() le 0}" th:action="@{/clases/{id}/inscribirse(id=${k.id})}" method="post">
             <input type="hidden" name="deporte" th:value="${deporte}">
-            <button type="submit" class="btn-primary !px-4 !py-2 !text-[13px]">Apuntarme <span data-icon="arrowRight" data-cls="w-4 h-4"></span></button>
+            <button type="submit" class="btn-primary !px-4 !py-2 !text-[13px]">Apuntarme gratis <span data-icon="arrowRight" data-cls="w-4 h-4"></span></button>
           </form>
         </div>
       </article>

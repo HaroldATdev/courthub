@@ -104,17 +104,17 @@
           <h3 class="font-display font-semibold text-slate-900 px-5 pt-5" th:text="'Detalle de ventas · ' + ${nombrePeriodo} + ' (' + ${#lists.size(r.detalle)} + ')'"></h3>
           <p th:if="${#lists.isEmpty(r.detalle)}" class="text-sm text-gray-400 px-5 py-6">No hay ventas en este periodo.</p>
           <div class="overflow-x-auto mt-3" th:unless="${#lists.isEmpty(r.detalle)}"><table class="admin-table">
-            <thead><tr><th>Boleta</th><th>Fecha</th><th>Reserva</th><th>Cliente</th><th>Cancha</th><th>Medio de pago</th><th>Total</th><th class="print:hidden"></th></tr></thead>
+            <thead><tr><th>Boleta</th><th>Fecha</th><th>Tipo</th><th>Concepto</th><th>Cliente</th><th>Medio de pago</th><th>Total</th><th class="print:hidden"></th></tr></thead>
             <tbody>
               <tr th:each="v : ${r.detalle}">
                 <td class="font-mono text-xs" th:text="${v.boleta}"></td>
                 <td class="text-xs" th:text="${#temporals.format(v.fecha, 'dd/MM/yyyy HH:mm')}"></td>
-                <td class="font-mono text-xs" th:text="${v.codigo}"></td>
+                <td><span class="badge" th:classappend="${v.tipo == 'Clase'} ? 'badge-pendiente' : 'badge-confirmada'" th:text="${v.tipo}"></span></td>
+                <td th:text="${v.concepto}"></td>
                 <td th:text="${v.cliente}"></td>
-                <td th:text="${v.cancha}"></td>
                 <td class="text-xs" th:text="${v.metodo}"></td>
                 <td class="font-semibold" th:text="${@fmt.pen(v.total)}"></td>
-                <td class="print:hidden"><a th:href="@{/reservas/{id}/boleta(id=${v.reservaId})}" target="_blank" rel="noopener" class="btn-outline !py-1 !px-2.5 !text-xs">Boleta PDF</a></td>
+                <td class="print:hidden"><a th:href="@{/boletas/{id}(id=${v.pagoId})}" target="_blank" rel="noopener" class="btn-outline !py-1 !px-2.5 !text-xs">Boleta PDF</a></td>
               </tr>
             </tbody>
           </table></div>

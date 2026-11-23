@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<!-- Vista: Pago de la inscripción a una clase · Controlador: ClaseViewController#pago / #inscribirse (POST /clases/{id}/inscribirse) -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Pago de clase')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('clases')}"></header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10">
+    <div class="flex items-center gap-2 text-sm pt-5 flex-wrap">
+      <a th:href="@{/clases(deporte=${clasePagoForm.deporte})}" class="flex items-center gap-1.5 text-primary-600 font-semibold hover:text-primary-700 transition">
+        <span data-icon="arrowLeft" data-cls="w-4 h-4"></span>Volver a Clases
+      </a>
+      <span class="text-gray-300">/</span>
+      <span class="text-gray-500">Pago de la inscripción</span>
+    </div>
+
+    <form th:action="@{/clases/{id}/inscribirse(id=${clase.id})}" method="post" class="grid lg:grid-cols-5 gap-6 mt-5 items-start" novalidate>
+      <input type="hidden" name="deporte" th:value="${clasePagoForm.deporte}">
+
+      <section class="lg:col-span-3 card p-6 sm:p-8">
+        <h1 class="font-display text-xl sm:text-2xl font-bold text-slate-900">Pago de la clase</h1>
+        <p class="text-sm text-gray-500 mt-1">Al pagar quedas inscrito y recibirás tu boleta en PDF.</p>
+        <div th:replace="~{fragments/pago :: campos(${clasePagoForm}, 'Pagar e inscribirme')}"></div>
+      </section>
+
+      <aside class="lg:col-span-2 space-y-5">
+        <section class="card p-6 sm:p-7">
+          <h2 class="font-display text-lg font-bold text-slate-900">Resumen de la clase</h2>
+          <p class="text-xs text-gray-400 mt-0.5">Verifica los detalles antes de pagar.</p>
+          <div class="mt-5 pb-5 border-b border-gray-100">
+            <span class="text-[10px] font-bold tracking-wider text-primary-600 bg-primary-50 px-2 py-0.5 rounded" th:text="${#strings.toUpperCase(@fmt.deporte(clase.deporte))}">TENIS</span>
+            <p class="font-semibold text-slate-800 mt-1.5 leading-snug" th:text="${clase.nombre}"></p>
+            <p class="text-xs text-gray-400 mt-0.5" th:text="'Nivel: ' + ${clase.nivel}"></p>
+          </div>
+          <dl class="text-sm space-y-3 py-5 border-b border-gray-100">
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Entrenador</dt><dd class="font-semibold text-slate-800" th:text="${clase.entrenador.nombre}"></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Fecha</dt><dd class="font-semibold text-right text-slate-800" th:text="${@fmt.fechaLarga(clase.fecha)}"></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Horario</dt><dd class="font-semibold text-slate-800" th:text="${clase.horaInicio} + ' - ' + ${clase.horaFin}"></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Lugar</dt><dd class="font-semibold text-slate-800" th:text="${clase.cancha != null ? clase.cancha.nombre : '—'}"></dd></div>
+            <div class="flex justify-between gap-3"><dt class="text-gray-500 shrink-0">Cupos disponibles</dt><dd class="font-semibold text-slate-800" th:text="${clase.cuposDisponibles} + ' de ' + ${clase.cupoMax}"></dd></div>
+          </dl>
+          <div class="flex items-center justify-between pt-4">
+            <span class="font-display font-bold text-slate-900">Total</span>
+            <span class="font-display text-2xl font-bold text-slate-900" th:text="${@fmt.pen(clase.precio)}"></span>
+          </div>
+        </section>
+      </aside>
+    </form>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+  <th:block th:replace="~{fragments/pago :: script}"></th:block>
+</body>
+</html>

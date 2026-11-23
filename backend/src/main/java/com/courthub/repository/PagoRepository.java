@@ -15,11 +15,21 @@ public interface PagoRepository extends JpaRepository<Pago, Long> {
     /** Cobro vigente de una reserva (aprobado). */
     Optional<Pago> findByReservaIdAndEstado(Long reservaId, String estado);
 
+    /** Cobro vigente de una inscripción (aprobado). */
+    Optional<Pago> findFirstByInscripcionIdAndEstado(Long inscripcionId, String estado);
+
     /** Pago de una reserva con todo lo necesario para emitir la boleta. */
-    @EntityGraph(attributePaths = {"reserva", "reserva.cancha", "usuario"})
+    @EntityGraph(attributePaths = {"reserva", "reserva.cancha", "usuario", "inscripcion", "inscripcion.clase"})
     Optional<Pago> findFirstByReservaIdAndEstadoInOrderByIdDesc(Long reservaId, Collection<String> estados);
 
-    /** Pagos con su reserva, cancha y cliente (reporte de ventas), del más reciente al más antiguo. */
-    @EntityGraph(attributePaths = {"reserva", "reserva.cancha", "usuario"})
+    /** Pago de una inscripción con todo lo necesario para emitir la boleta. */
+    @EntityGraph(attributePaths = {"reserva", "reserva.cancha", "usuario", "inscripcion", "inscripcion.clase"})
+    Optional<Pago> findFirstByInscripcionIdAndEstadoInOrderByIdDesc(Long inscripcionId, Collection<String> estados);
+
+    @EntityGraph(attributePaths = {"reserva", "reserva.cancha", "usuario", "inscripcion", "inscripcion.clase"})
+    Optional<Pago> findWithOrigenById(Long id);
+
+    /** Pagos con su origen (reserva o clase) y cliente (reporte de ventas), del más reciente al más antiguo. */
+    @EntityGraph(attributePaths = {"reserva", "reserva.cancha", "usuario", "inscripcion", "inscripcion.clase"})
     List<Pago> findAllByOrderByFechaPagoDesc();
 }

@@ -156,10 +156,10 @@ public class AdminViewController {
     @GetMapping(value = "/ventas/exportar", produces = "text/csv")
     public ResponseEntity<byte[]> exportarVentas(@RequestParam(required = false) String anio, @RequestParam(required = false) String mes) {
         Reporte r = ventas.reporte(entero(anio), entero(mes));
-        StringBuilder sb = new StringBuilder("﻿Boleta;Operacion;Fecha;Reserva;Cliente;Cancha;Metodo;Subtotal;Cargo;Total\n");
+        StringBuilder sb = new StringBuilder("﻿Boleta;Operacion;Fecha;Tipo;Concepto;Cliente;Metodo;Subtotal;Cargo;Total\n");
         for (Venta v : r.detalle()) {
             sb.append(csv(v.boleta(), v.operacion(), v.fecha().toLocalDateTime().toString().replace('T', ' '),
-                    v.codigo(), v.cliente(), v.cancha(), v.metodo(), v.subtotal(), v.cargo(), v.total()));
+                    v.tipo(), v.concepto(), v.cliente(), v.metodo(), v.subtotal(), v.cargo(), v.total()));
         }
         String periodo = r.mes() == 0 ? String.valueOf(r.anio()) : r.anio() + "-" + String.format("%02d", r.mes());
         return descarga("ventas-courthub-" + periodo + ".csv", sb.toString());

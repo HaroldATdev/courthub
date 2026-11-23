@@ -441,8 +441,12 @@ public class AdminService {
             long ocupados = inscripciones.countByClaseIdAndEstado(i.getClase().getId(), Inscripcion.INSCRITO);
             if (ocupados >= i.getClase().getCupoMaximo()) throw ApiException.conflict("El cupo de la clase está lleno.");
         }
+        boolean estabaCancelada = Inscripcion.CANCELADO.equals(i.getEstado());
         i.setEstado(req.estado());
         inscripciones.save(i);
+        // El cobro sigue a la inscripción: anular lo reembolsa; reactivar lo vuelve a aprobar
+        if (Inscripcion.CANCELADO.equals(req.estado())) pagos.reembolsarInscripcion(i.getId());
+        else if (estabaCancelada) pagos.reactivarInscripcion(i);
         return InscripcionDto.de(i);
     }
 

@@ -8,6 +8,7 @@ import com.courthub.exception.ApiException;
 import com.courthub.security.AuthUser;
 import com.courthub.service.BoletaService;
 import com.courthub.service.CanchaService;
+import com.courthub.service.PagoService;
 import com.courthub.service.ReservaService;
 import com.courthub.service.ReservaService.Cotizacion;
 import com.courthub.util.Horarios;
@@ -38,6 +39,10 @@ public class ReservaViewController {
     private final ReservaService reservaService;
     private final CanchaService canchaService;
     private final BoletaService boletaService;
+    private final PagoService pagoService;
+
+    @org.springframework.beans.factory.annotation.Value("${CULQI_PUBLIC_KEY:}")
+    private String culqiPublicKey;
 
     /* ---------------- Pago ---------------- */
 
@@ -62,23 +67,9 @@ public class ReservaViewController {
     @PostMapping("/reservas")
     public String confirmar(@AuthenticationPrincipal AuthUser usuario, @Valid @ModelAttribute ReservaForm reservaForm,
                             BindingResult result, Model model, RedirectAttributes ra) {
-        if (!reservaForm.isTerminos()) {
-            result.rejectValue("terminos", "terminos", "Debes aceptar los términos y condiciones para continuar.");
-        }
-        if ("Tarjeta de Crédito".equals(reservaForm.getMetodoPago())) {
-            String numero = digitos(reservaForm.getNumeroTarjeta());
-            String venc = digitos(reservaForm.getVencimiento());
-            String cvv = digitos(reservaForm.getCvv());
-            if (reservaForm.getNombreTarjeta() == null || reservaForm.getNombreTarjeta().isBlank()) {
-                result.rejectValue("nombreTarjeta", "tarjeta", "Ingresa el nombre que aparece en la tarjeta.");
-            } else if (numero.length() != 16) {
-                result.rejectValue("numeroTarjeta", "tarjeta", "El número de tarjeta debe tener 16 dígitos.");
-            } else if (venc.length() != 4 || Integer.parseInt(venc.substring(0, 2)) < 1 || Integer.parseInt(venc.substring(0, 2)) > 12) {
-                result.rejectValue("vencimiento", "tarjeta", "Ingresa una fecha de vencimiento válida (MM / AA).");
-            } else if (cvv.length() < 3) {
-                result.rejectValue("cvv", "tarjeta", "El CVV debe tener 3 o 4 dígitos.");
-            }
-        }
+        PagoFormUtil.validar(reservaForm.isTerminos(), reservaForm.getMetodoPago(), reservaForm.getTokenCulqi(),
+                reservaForm.getNombreTarjeta(), reservaForm.getNumeroTarjeta(), reservaForm.getVencimiento(), reservaForm.getCvv(),
+                pagoService.pasarela().usaToken(), result);
         if (result.hasErrors()) {
             model.addAttribute("pagoError", result.getAllErrors().get(0).getDefaultMessage());
             prepararPago(model, reservaForm);
@@ -87,12 +78,9 @@ public class ReservaViewController {
         try {
             LocalDate fecha = Horarios.parseFecha(reservaForm.getFecha(), "Fecha inválida.");
             LocalTime inicio = Horarios.parseHora(reservaForm.getHoraInicio(), "Hora inválida.");
-            // Solo se conservan los últimos 4 dígitos de la tarjeta; el número completo y el CVV nunca se guardan
-            String numero = digitos(reservaForm.getNumeroTarjeta());
-            String ultimos4 = "Tarjeta de Crédito".equals(reservaForm.getMetodoPago()) && numero.length() >= 4
-                    ? numero.substring(numero.length() - 4) : null;
+            // El número de tarjeta solo se usa en la pasarela simulada y nunca se guarda; con Culqi solo llega el token
             ReservaDto r = reservaService.crear(usuario.id(), reservaForm.getCanchaId(), fecha, inicio,
-                    reservaForm.getMetodoPago(), ultimos4);
+                    new PagoService.DatosPago(reservaForm.getMetodoPago(), reservaForm.getTokenCulqi(), reservaForm.getNumeroTarjeta()));
             ra.addFlashAttribute("toast", "¡Reserva " + r.codigo() + " confirmada! Pago aprobado por " + r.total() + " soles.");
             return "redirect:/mis-reservas?ok=1";
         } catch (ApiException e) {
@@ -113,10 +101,9 @@ public class ReservaViewController {
         model.addAttribute("cancha", cancha);
         model.addAttribute("horaFin", Horarios.hora(inicio.plusMinutes(Horarios.DURACION_BLOQUE_MIN)));
         model.addAttribute("cotizacion", Cotizacion.de(cancha.precioHora()));
-    }
-
-    private static String digitos(String s) {
-        return s == null ? "" : s.replaceAll("\\D", "");
+        model.addAttribute("montoCentimos", Cotizacion.de(cancha.precioHora()).total().movePointRight(2).longValue());
+        model.addAttribute("culqiPublicKey", culqiPublicKey);
+        model.addAttribute("usaToken", pagoService.pasarela().usaToken());
     }
 
     /* ---------------- Historial ---------------- */
@@ -147,6 +134,16 @@ public class ReservaViewController {
     @GetMapping("/reservas/{id}/boleta")
     public ResponseEntity<byte[]> boleta(@AuthenticationPrincipal AuthUser usuario, @PathVariable Long id) {
         BoletaService.Boleta b = boletaService.generar(id, usuario);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + b.nombreArchivo() + "\"")
+                .body(b.pdf());
+    }
+
+    /** Boleta por número de pago (enlace del reporte de ventas). */
+    @GetMapping("/boletas/{pagoId}")
+    public ResponseEntity<byte[]> boletaDePago(@AuthenticationPrincipal AuthUser usuario, @PathVariable Long pagoId) {
+        BoletaService.Boleta b = boletaService.generarPorPago(pagoId, usuario);
         return ResponseEntity.ok()
                 .contentType(MediaType.APPLICATION_PDF)
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + b.nombreArchivo() + "\"")

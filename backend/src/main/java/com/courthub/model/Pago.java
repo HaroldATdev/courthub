@@ -19,14 +19,23 @@ public class Pago {
 
     /** Proveedor mientras no exista una pasarela real (Culqi, Mercado Pago...). */
     public static final String PROVEEDOR_SIMULADO = "simulado";
+    /** Cobro registrado a mano (p. ej. el administrador confirma un pago hecho en el local). */
+    public static final String PROVEEDOR_MANUAL = "manual";
+
+    public boolean esDeReserva() { return reserva != null; }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "reserva_id", nullable = false)
+    /** El pago es de una reserva O de una inscripción a clase (exactamente una de las dos). */
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "reserva_id")
     private Reserva reserva;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "inscripcion_id")
+    private Inscripcion inscripcion;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "usuario_id", nullable = false)
@@ -38,6 +47,10 @@ public class Pago {
     @Column(nullable = false, length = 30)
     @Builder.Default
     private String proveedor = PROVEEDOR_SIMULADO;
+
+    /** Id del cargo en la pasarela (p. ej. chr_test_xxx de Culqi); null si no hubo pasarela. */
+    @Column(length = 80)
+    private String referencia;
 
     @Column(nullable = false, length = 40)
     private String metodo;

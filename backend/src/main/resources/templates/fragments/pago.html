@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<!-- Formulario de pago compartido (reservas y clases).
+     Con Culqi la tarjeta se escribe en la ventana segura de Culqi y al servidor solo llega un token;
+     sin llaves se usa la pasarela simulada con campos de tarjeta de prueba. -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<body>
+
+<div th:fragment="campos(form, boton)" id="pago-box"
+     th:attr="data-usa-token=${usaToken}, data-key=${culqiPublicKey}, data-monto=${montoCentimos}, data-email=${usuario != null ? usuario.email : ''}">
+
+  <input type="hidden" name="metodoPago" id="metodoPago" th:value="${form.metodoPago}">
+  <input type="hidden" name="tokenCulqi" id="tokenCulqi" value="">
+
+  <p class="ch-label mt-7">Método de Pago</p>
+
+  <!-- Culqi: un solo método (tarjeta en la ventana de Culqi) -->
+  <div th:if="${usaToken}" class="rounded-2xl border border-primary-200 bg-primary-50/60 p-4 text-sm text-slate-700">
+    <p class="font-semibold flex items-center gap-2"><span data-icon="shieldCheck" data-cls="w-[18px] h-[18px] text-primary-600"></span>Tarjeta de crédito o débito con Culqi</p>
+    <p class="text-xs text-gray-500 mt-1.5 leading-relaxed">Al confirmar se abrirá la ventana segura de Culqi donde escribirás los datos de tu tarjeta. CourtHub nunca ve ni guarda el número de tu tarjeta.
+      <b class="text-slate-700">Modo de pruebas:</b> usa la tarjeta <span class="font-mono">4111 1111 1111 1111</span>, vencimiento 09/30 y CVV 123; no se cobra dinero real.</p>
+  </div>
+
+  <!-- Pasarela simulada: tres métodos y campos de tarjeta -->
+  <th:block th:unless="${usaToken}">
+    <div id="metodos" class="grid grid-cols-3 gap-3">
+      <button type="button" class="metodo" th:classappend="${form.metodoPago == 'Tarjeta de Crédito'} ? 'active'" data-metodo="Tarjeta de Crédito">
+        <span data-icon="card" data-cls="w-[18px] h-[18px] text-primary-600"></span><span class="hidden sm:inline">Tarjeta de Crédito</span>
+      </button>
+      <button type="button" class="metodo" th:classappend="${form.metodoPago == 'PayPal'} ? 'active'" data-metodo="PayPal">
+        <span data-icon="wallet" data-cls="w-[18px] h-[18px] text-blue-500"></span><span class="hidden sm:inline">PayPal</span>
+      </button>
+      <button type="button" class="metodo" th:classappend="${form.metodoPago == 'Webpay'} ? 'active'" data-metodo="Webpay">
+        <span data-icon="shieldCheck" data-cls="w-[18px] h-[18px] text-sky-600"></span><span class="hidden sm:inline">Webpay</span>
+      </button>
+    </div>
+
+    <div id="campos-tarjeta" class="space-y-5 mt-6" th:classappend="${form.metodoPago != 'Tarjeta de Crédito'} ? 'hidden'">
+      <p class="text-[11px] text-gray-400">Pasarela simulada: no se envía a ningún banco ni se cobra dinero. Tarjeta de rechazo de prueba: <span class="font-mono">4000 0400 0000 0008</span> (fondos insuficientes).</p>
+      <div>
+        <label class="ch-label" for="t-nombre">Nombre en la Tarjeta</label>
+        <div class="input-wrap">
+          <span data-icon="user" data-cls="w-[18px] h-[18px]"></span>
+          <input id="t-nombre" type="text" name="nombreTarjeta" th:value="${form.nombreTarjeta}" class="ch-input" placeholder="Gustavo Diaz" autocomplete="cc-name">
+        </div>
+      </div>
+      <div>
+        <label class="ch-label" for="t-numero">Número de Tarjeta</label>
+        <div class="input-wrap">
+          <span data-icon="card" data-cls="w-[18px] h-[18px]"></span>
+          <input id="t-numero" type="text" inputmode="numeric" name="numeroTarjeta" th:value="${form.numeroTarjeta}" class="ch-input" placeholder="4111 1111 1111 1111" maxlength="19" autocomplete="cc-number">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-4">
+        <div>
+          <label class="ch-label" for="t-venc">Fecha de Vencimiento</label>
+          <div class="input-wrap">
+            <span data-icon="calendar" data-cls="w-[18px] h-[18px]"></span>
+            <input id="t-venc" type="text" inputmode="numeric" name="vencimiento" th:value="${form.vencimiento}" class="ch-input" placeholder="MM / AA" maxlength="7" autocomplete="cc-exp">
+          </div>
+        </div>
+        <div>
+          <label class="ch-label" for="t-cvv">CVV</label>
+          <div class="input-wrap">
+            <span data-icon="lock" data-cls="w-[18px] h-[18px]"></span>
+            <input id="t-cvv" type="password" inputmode="numeric" name="cvv" class="ch-input" placeholder="•••" maxlength="4" autocomplete="cc-csc">
+          </div>
+        </div>
+      </div>
+    </div>
+  </th:block>
+
+  <label class="flex items-start gap-2.5 text-sm text-slate-600 mt-6 cursor-pointer select-none">
+    <input type="checkbox" id="terminos" name="terminos" value="true" th:checked="${form.terminos}" class="mt-0.5 w-4 h-4 rounded border-gray-300 accent-primary-500 shrink-0">
+    <span>Acepto los <a href="#" class="text-primary-600 font-medium underline underline-offset-2">términos, condiciones</a> y políticas de cancelación de CourtHub.</span>
+  </label>
+  <p id="pago-aviso" th:if="${pagoError}" th:text="${pagoError}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mt-5"></p>
+  <p id="pago-aviso-js" class="hidden text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3 mt-5"></p>
+  <button id="btn-pagar" class="btn-primary w-full mt-6 !py-3.5" type="submit" th:text="${boton}">Confirmar</button>
+</div>
+
+<!-- Script del formulario de pago: métodos, formato de tarjeta y ventana de Culqi -->
+<th:block th:fragment="script">
+  <script th:if="${usaToken}" src="https://js.culqi.com/checkout-js"></script>
+  <script th:inline="none">
+    (function () {
+      var box = document.getElementById('pago-box');
+      var form = box.closest('form');
+      var btn = document.getElementById('btn-pagar');
+      var aviso = document.getElementById('pago-aviso-js');
+      function mostrar(msg) { aviso.textContent = msg; aviso.classList.remove('hidden'); }
+
+      if (box.dataset.usaToken === 'true') {
+        /* Culqi Checkout: la tarjeta se escribe en la ventana de Culqi; aquí solo recibimos el token */
+        var token = document.getElementById('tokenCulqi');
+        var culqi = new CulqiCheckout(box.dataset.key, {
+          settings: { title: 'CourtHub', currency: 'PEN', amount: parseInt(box.dataset.monto, 10) },
+          client: { email: box.dataset.email }
+        });
+        culqi.culqi = function () {
+          if (culqi.token) {
+            token.value = culqi.token.id;
+            culqi.close();
+            btn.disabled = true; btn.textContent = 'Procesando pago...';
+            form.submit();
+          } else if (culqi.error) {
+            mostrar(culqi.error.user_message || 'No se pudo validar la tarjeta. Inténtalo de nuevo.');
+          }
+        };
+        form.addEventListener('submit', function (e) {
+          if (token.value) return;
+          e.preventDefault();
+          if (!document.getElementById('terminos').checked) { mostrar('Debes aceptar los términos y condiciones para continuar.'); return; }
+          aviso.classList.add('hidden');
+          culqi.open();
+        });
+        return;
+      }
+
+      /* Pasarela simulada */
+      document.querySelectorAll('#metodos .metodo').forEach(function (b) {
+        b.addEventListener('click', function () {
+          document.querySelectorAll('#metodos .metodo').forEach(function (x) { x.classList.remove('active'); });
+          b.classList.add('active');
+          document.getElementById('metodoPago').value = b.dataset.metodo;
+          document.getElementById('campos-tarjeta').classList.toggle('hidden', b.dataset.metodo !== 'Tarjeta de Crédito');
+        });
+      });
+      document.getElementById('t-numero').addEventListener('input', function () { var d = this.value.replace(/\D/g, '').slice(0, 16); this.value = d.replace(/(.{4})/g, '$1 ').trim(); });
+      document.getElementById('t-venc').addEventListener('input', function () { var d = this.value.replace(/\D/g, '').slice(0, 4); this.value = d.length > 2 ? d.slice(0, 2) + ' / ' + d.slice(2) : d; });
+      document.getElementById('t-cvv').addEventListener('input', function () { this.value = this.value.replace(/\D/g, '').slice(0, 4); });
+      form.addEventListener('submit', function () { btn.disabled = true; btn.textContent = 'Procesando pago...'; });
+    })();
+  </script>
+</th:block>
+
+</body>
+</html>

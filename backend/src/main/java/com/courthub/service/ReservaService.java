@@ -54,18 +54,16 @@ public class ReservaService {
         }
         LocalDate fecha = Horarios.parseFecha(req.fecha(), "Datos de reserva incompletos o inválidos.");
         LocalTime inicio = Horarios.parseHora(req.horaInicio(), "Datos de reserva incompletos o inválidos.");
-        return crear(usuarioId, req.canchaId(), fecha, inicio, req.metodoPago());
+        return crear(usuarioId, req.canchaId(), fecha, inicio, PagoService.DatosPago.metodo(req.metodoPago()));
     }
 
+    /**
+     * Crea la reserva y la cobra con la pasarela configurada (misma transacción): si el pago es rechazado
+     * no queda ni la reserva ni el pago, y el bloque horario sigue libre.
+     */
     @Transactional
-    public ReservaDto crear(Long usuarioId, Long canchaId, LocalDate fecha, LocalTime inicio, String metodoPago) {
-        return crear(usuarioId, canchaId, fecha, inicio, metodoPago, null);
-    }
-
-    /** Crea la reserva y registra su cobro en "pagos" (misma transacción). */
-    @Transactional
-    public ReservaDto crear(Long usuarioId, Long canchaId, LocalDate fecha, LocalTime inicio, String metodoPago,
-                            String tarjetaUltimos4) {
+    public ReservaDto crear(Long usuarioId, Long canchaId, LocalDate fecha, LocalTime inicio, PagoService.DatosPago datos) {
+        String metodoPago = datos == null ? null : datos.metodo();
         if (Horarios.yaPaso(fecha, inicio)) {
             throw ApiException.badRequest("No puedes reservar bloques que ya pasaron.");
         }
@@ -88,7 +86,7 @@ public class ReservaService {
                 .metodoPago(metodoPago == null || metodoPago.isBlank() ? "Tarjeta de Crédito" : metodoPago)
                 .build();
         r = reservas.save(r);
-        pagos.registrarAprobado(r, r.getMetodoPago(), tarjetaUltimos4);
+        pagos.cobrarReserva(r, datos);
         return ReservaDto.de(r);
     }
 
