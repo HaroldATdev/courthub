@@ -51,6 +51,14 @@ public class DosFactoresService {
         return activadoPorConfig && mail.configurado();
     }
 
+    /** Deja en el log de arranque si el 2FA quedó activo y por qué (útil para diagnosticar en Render). */
+    @org.springframework.context.event.EventListener(org.springframework.boot.context.event.ApplicationReadyEvent.class)
+    public void registrarEstado() {
+        log.info("[2FA] {} · proveedor de correo: {} · TWOFA_ENABLED={}",
+                habilitado() ? "ACTIVO (el login por usuario y clave pedirá un código)" : "INACTIVO (el login entra solo con la clave)",
+                mail.proveedor(), activadoPorConfig);
+    }
+
     /** Crea un código, lo envía por correo y devuelve el desafío que debe acompañar a la verificación. */
     @Transactional
     public String iniciar(Usuario u) {
@@ -66,6 +74,7 @@ public class DosFactoresService {
             throw new ApiException(HttpStatus.SERVICE_UNAVAILABLE,
                     "No pudimos enviar el código de verificación a tu correo. Inténtalo de nuevo en unos minutos.");
         }
+        log.info("[2FA] Código enviado a {} (vence en {} min)", DosFactoresService.enmascarar(u.getEmail()), MINUTOS_VIGENCIA);
         return desafio;
     }
 
