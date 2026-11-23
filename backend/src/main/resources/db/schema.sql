@@ -178,3 +178,28 @@ CREATE TABLE IF NOT EXISTS claves_reset (
   fecha_creacion TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
 CREATE INDEX IF NOT EXISTS idx_claves_reset_usuario ON claves_reset (usuario_id);
+
+-- ============================================================
+-- 10) PAGOS — un registro por cobro de reserva (estado: aprobado | rechazado | reembolsado)
+--     proveedor 'simulado' mientras no haya pasarela; solo se guardan los últimos 4 dígitos de la tarjeta.
+-- ============================================================
+CREATE TABLE IF NOT EXISTS pagos (
+  id               SERIAL PRIMARY KEY,
+  reserva_id       INTEGER       NOT NULL REFERENCES reservas (id) ON DELETE CASCADE,
+  usuario_id       INTEGER       NOT NULL REFERENCES usuarios (id) ON DELETE CASCADE,
+  operacion        VARCHAR(30)   NOT NULL UNIQUE,
+  proveedor        VARCHAR(30)   NOT NULL DEFAULT 'simulado',
+  metodo           VARCHAR(40)   NOT NULL,
+  tarjeta_ultimos4 VARCHAR(4),
+  subtotal         NUMERIC(10,2) NOT NULL CHECK (subtotal >= 0),
+  cargo_servicio   NUMERIC(10,2) NOT NULL DEFAULT 0,
+  monto            NUMERIC(10,2) NOT NULL CHECK (monto >= 0),
+  moneda           VARCHAR(3)    NOT NULL DEFAULT 'PEN',
+  estado           VARCHAR(20)   NOT NULL DEFAULT 'aprobado'
+                   CHECK (estado IN ('aprobado', 'rechazado', 'reembolsado')),
+  fecha_pago       TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+);
+-- Una reserva no puede tener dos cobros aprobados a la vez
+CREATE UNIQUE INDEX IF NOT EXISTS uq_pago_reserva_aprobado ON pagos (reserva_id) WHERE estado = 'aprobado';
+CREATE INDEX IF NOT EXISTS idx_pagos_usuario ON pagos (usuario_id);
+CREATE INDEX IF NOT EXISTS idx_pagos_fecha ON pagos (fecha_pago);

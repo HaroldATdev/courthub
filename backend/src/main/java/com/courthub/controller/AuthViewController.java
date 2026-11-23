@@ -54,11 +54,13 @@ public class AuthViewController {
         if (!model.containsAttribute("loginForm")) model.addAttribute("loginForm", new LoginForm());
         if (!model.containsAttribute("registroForm")) model.addAttribute("registroForm", new RegistroForm());
         if (salir != null) model.addAttribute("info", "Sesión cerrada correctamente.");
-        if (registrado != null) model.addAttribute("info", AuthService.MSG_REGISTRO_OK);
+        if (registrado != null) {
+            model.addAttribute("info", "admin".equals(registrado) ? AuthService.MSG_REGISTRO_ADMIN : AuthService.MSG_REGISTRO_OK);
+        }
         if (clave != null) model.addAttribute("info", "Contraseña actualizada. Ya puedes iniciar sesión con la nueva.");
         if (google != null) {
             model.addAttribute("loginError", switch (google) {
-                case "pendiente" -> "Tu cuenta de Google quedó registrada en estado pendiente. " + AuthService.MSG_PENDIENTE;
+                case "pendiente" -> AuthService.MSG_PENDIENTE;
                 case "anulada" -> AuthService.MSG_ANULADA;
                 default -> "No se pudo iniciar sesión con Google. Inténtalo de nuevo o usa el formulario.";
             });
@@ -97,11 +99,11 @@ public class AuthViewController {
             return "index";
         }
         try {
-            // El estado inicial es "pendiente": no se inicia sesión; el administrador debe activar la cuenta.
+            // Cliente: cuenta activa, entra desde el login. Administrador: queda pendiente hasta que otro lo apruebe.
             RegisterResponse r = authService.registrar(new RegisterRequest(
                     registroForm.getDni(), registroForm.getNombres(), registroForm.getApellidos(), registroForm.getUsuario(),
                     registroForm.getEmail(), registroForm.getPassword(), registroForm.getRol()));
-            return "redirect:/login?registrado=1";
+            return "redirect:/login?registrado=" + (AuthUser.ADMINISTRADOR.equals(r.usuario().rol()) ? "admin" : "1");
         } catch (ApiException e) {
             model.addAttribute("registroError", e.getMessage());
             return "index";

@@ -89,7 +89,7 @@
           </form>
 
           <!-- ---------- Formulario: Registrarse (POST /registro) ----------
-               Tercer avance: dni, nombres, apellidos, usuario, clave, perfil y estado (pendiente por defecto).
+               Tercer avance: dni, nombres, apellidos, usuario, clave, perfil y estado (activo para clientes; pendiente si el perfil es administrador).
                Validaciones en AuthService: DNI único y usuario único. -------------------------------------- -->
           <form id="form-registro" th:action="@{/registro}" th:object="${registroForm}" method="post" class="space-y-4" th:classappend="${tab != 'registro'} ? 'hidden'" novalidate>
             <p th:if="${registroError}" th:text="${registroError}" class="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"></p>
@@ -160,10 +160,10 @@
               </div>
               <div>
                 <label class="ch-label" for="reg-estado">Estado</label>
-                <input id="reg-estado" type="text" value="Pendiente" class="ch-input ch-input-plain bg-gray-50 text-gray-500" readonly>
+                <input id="reg-estado" type="text" value="Activo" class="ch-input ch-input-plain bg-gray-50 text-gray-500" readonly>
               </div>
             </div>
-            <p class="text-[11px] text-gray-400">Tu cuenta se crea en estado <b>pendiente</b>; solo el administrador puede activarla. El DNI y el usuario no pueden repetirse.</p>
+            <p class="text-[11px] text-gray-400">Las cuentas de cliente se crean en estado <b>activo</b>. Si eliges el perfil <b>Administrador</b>, quedará <b>pendiente</b> hasta que otro administrador la apruebe. El DNI y el usuario no pueden repetirse.</p>
             <button type="submit" class="btn-primary w-full !py-3.5">Crear Cuenta</button>
             <p class="text-center text-sm text-slate-600 !mt-5">¿Ya tienes cuenta? <a href="#" id="link-login" class="link-green">Inicia sesión</a></p>
           </form>

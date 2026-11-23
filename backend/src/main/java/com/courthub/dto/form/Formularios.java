@@ -27,7 +27,7 @@ public final class Formularios {
         @NotBlank(message = "Ingresa tu usuario y contraseña para continuar.") private String password;
     }
 
-    /** Registro de usuario (tercer avance): dni, nombres, apellidos, usuario, clave, perfil; estado inicial "pendiente". */
+    /** Registro de usuario (tercer avance): dni, nombres, apellidos, usuario, clave, perfil; estado inicial "activo" (pendiente si pide ser administrador). */
     @Data
     public static class RegistroForm {
         @NotBlank(message = "El DNI es obligatorio.") @Pattern(regexp = "\\d{8}", message = "El DNI debe tener 8 dígitos.") private String dni;
@@ -39,7 +39,7 @@ public final class Formularios {
         @NotBlank(message = "La contraseña es obligatoria.") @Size(min = 6, message = "La contraseña debe tener al menos 6 caracteres.") private String password;
         private String password2;
         private String rol = "cliente";            // perfil: cliente | administrador
-        private final String estado = "pendiente"; // estado por defecto (solo el administrador activa)
+        private final String estado = "activo"; // clientes nacen activos; el perfil administrador queda pendiente
     }
 
     /** Pago y confirmación de reserva. */

@@ -35,6 +35,7 @@ public class ReservaService {
     private final ReservaRepository reservas;
     private final CanchaRepository canchas;
     private final UsuarioRepository usuarios;
+    private final PagoService pagos;
 
     /** Importes de un bloque: subtotal (precio/h × 1.5), cargo por servicio (10 %) y total. */
     public record Cotizacion(BigDecimal subtotal, BigDecimal cargo, BigDecimal total) {
@@ -58,6 +59,13 @@ public class ReservaService {
 
     @Transactional
     public ReservaDto crear(Long usuarioId, Long canchaId, LocalDate fecha, LocalTime inicio, String metodoPago) {
+        return crear(usuarioId, canchaId, fecha, inicio, metodoPago, null);
+    }
+
+    /** Crea la reserva y registra su cobro en "pagos" (misma transacción). */
+    @Transactional
+    public ReservaDto crear(Long usuarioId, Long canchaId, LocalDate fecha, LocalTime inicio, String metodoPago,
+                            String tarjetaUltimos4) {
         if (Horarios.yaPaso(fecha, inicio)) {
             throw ApiException.badRequest("No puedes reservar bloques que ya pasaron.");
         }
@@ -79,7 +87,9 @@ public class ReservaService {
                 .subtotal(c.subtotal()).cargoServicio(c.cargo()).total(c.total())
                 .metodoPago(metodoPago == null || metodoPago.isBlank() ? "Tarjeta de Crédito" : metodoPago)
                 .build();
-        return ReservaDto.de(reservas.save(r));
+        r = reservas.save(r);
+        pagos.registrarAprobado(r, r.getMetodoPago(), tarjetaUltimos4);
+        return ReservaDto.de(r);
     }
 
     /** Reservas del usuario (más recientes primero). */
@@ -101,6 +111,7 @@ public class ReservaService {
                 .filter(x -> Set.of(Reserva.PENDIENTE, Reserva.CONFIRMADA).contains(x.getEstado()))
                 .orElseThrow(() -> ApiException.notFound("Reserva no encontrada o ya cancelada."));
         r.setEstado(Reserva.CANCELADA);
+        pagos.reembolsar(r.getId());
         return ReservaDto.de(reservas.save(r));
     }
 

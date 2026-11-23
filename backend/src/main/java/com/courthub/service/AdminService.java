@@ -55,6 +55,7 @@ public class AdminService {
     private final ClaseService claseService;
     private final PasswordEncoder encoder;
     private final CatalogoService catalogo;
+    private final PagoService pagos;
 
     /* =====================================================================
        DASHBOARD — indicadores y reportes
@@ -337,7 +338,11 @@ public class AdminService {
                 throw ApiException.conflict("No se puede reactivar: el bloque ya está ocupado por otra reserva.");
             }
         }
+        boolean estabaCancelada = Reserva.CANCELADA.equals(r.getEstado());
         r.setEstado(req.estado());
+        // El cobro sigue a la reserva: cancelar lo reembolsa; reactivar lo vuelve a aprobar
+        if (Reserva.CANCELADA.equals(req.estado())) pagos.reembolsar(r.getId());
+        else if (estabaCancelada) pagos.reactivar(r.getId());
         return ReservaDto.de(reservas.save(r), true);
     }
 

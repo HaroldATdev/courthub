@@ -88,7 +88,7 @@ Componentes compartidos: `templates/fragments/layout.html` (head, header, footer
 5. **Mis reservas** → la reserva aparece en "Próximas"; cancelarla y mostrar que el bloque se libera; reprogramar otra.
 6. **Clases** → inscribirse a una clase y ver la barra de cupo actualizarse.
 7. **Panel ERP** → cerrar sesión, entrar como `admin`: activar la cuenta recién registrada en *Usuarios*, ver KPIs e ingresos por mes, filtrar reservas y cambiar un estado, crear una cancha y una clase eligiendo deporte y nivel desde las listas cargadas de la BD, exportar CSV.
-8. **Google** → desde el login pulsar *Continuar con Google* con un Gmail nuevo: la cuenta queda pendiente; activarla como `admin` y volver a entrar con Google.
+8. **Google** → desde el login pulsar *Continuar con Google* con un Gmail nuevo: la cuenta se crea activa y entra directo al dashboard.
 9. Cerrar con la **arquitectura** (diagrama MVC, abajo) y el **despliegue**: la app en Render (`courthub-1fwc.onrender.com`), la portada en Vercel y `docker compose ps` para el entorno local.
 
 <!--RUBRICA-NEXT-->
@@ -185,7 +185,9 @@ El primer arranque tarda unos minutos (Maven descarga dependencias). La base de 
 | `crojas`  | `entrenador@courthub.com` | Entrenador    | activo | Carla Rojas — dicta clases                    |
 | `admin`   | `admin@courthub.com`      | Administrador | activo | Entra directo al **panel ERP** (`/admin`)     |
 
-> El login acepta el **nombre de usuario o el correo**. Las cuentas que se registran desde el login nacen en estado **pendiente** y solo pueden entrar cuando el administrador las activa en *Administración → Usuarios*.
+> El login acepta el **nombre de usuario o el correo**. Las cuentas de **cliente** (registro normal o Google) nacen en estado **activo** y entran de inmediato. Quien se registra con el perfil **administrador** queda **pendiente** hasta que otro administrador lo active en *Administración → Usuarios* (si no, cualquiera podría darse acceso total al panel).
+>
+> **Pagos:** cada reserva cobrada deja un registro en la tabla `pagos` (número de operación, método, últimos 4 dígitos de la tarjeta, subtotal, cargo, monto, estado `aprobado`/`reembolsado`, proveedor). Al cancelar la reserva el pago pasa a `reembolsado`. El proveedor es `simulado` hasta integrar una pasarela.
 
 > 🔐 **Claves en producción:** `Password123` solo vale para el entorno local. En el despliegue público la aplicación lee las variables `ADMIN_PASSWORD` (cuenta `admin`) y `DEMO_PASSWORD` (cuentas `gdiaz`, `crojas`, `pmunoz`, `asoto`, `lperez`) y sobrescribe las claves del seed en cada arranque (`DataInitializer.aplicarClavesDeEntorno`). Así la clave real nunca se publica en GitHub.
 
@@ -232,7 +234,7 @@ mvn spring-boot:run            # http://localhost:8080
 | Método | Ruta                                       | Descripción                                   |
 |--------|--------------------------------------------|-----------------------------------------------|
 | GET    | `/api/health`                              | Estado de la aplicación                       |
-| POST   | `/api/auth/register`                       | Registro (dni, nombre, apellido, usuario, email, password, rol) → cuenta **pendiente** |
+| POST   | `/api/auth/register`                       | Registro (dni, nombre, apellido, usuario, email, password, rol) → cliente **activo**; administrador **pendiente** |
 | POST   | `/api/auth/login`                          | Login por `usuario` (nombre de usuario o correo) + `password` → **JWT** (solo cuentas activas) |
 | GET    | `/api/auth/me`                             | Perfil del usuario autenticado 🔒             |
 | GET    | `/api/canchas?tipo=&q=&comuna=&precioMin=&precioMax=` | Listado de canchas con filtros 🔒  |
@@ -253,7 +255,7 @@ mvn spring-boot:run            # http://localhost:8080
 | # | Requisito | Implementación | Dónde |
 |---|-----------|----------------|-------|
 | 1 | **Página de acceso** que valida usuario y clave con la BD | Formulario `POST /login`; `AuthService.login` busca por **usuario o correo** (`UsuarioRepository.findByUsuarioOEmail`), compara el hash BCrypt y exige estado `activo` | `templates/index.html`, `AuthViewController`, `AuthService` |
-| 2 | **Enlace de registro** al pie del login con *dni, nombres, apellidos, usuario, clave, perfil, estado* | El enlace "¿No tienes una cuenta? Regístrate aquí" abre el formulario `POST /registro`. Perfil: `cliente` o `administrador`. Estado por defecto **pendiente** (campo de solo lectura); solo el administrador puede pasarlo a `activo`; también existe `anulado` | `templates/index.html`, `Formularios.RegistroForm`, `AuthService.registrar` |
+| 2 | **Enlace de registro** al pie del login con *dni, nombres, apellidos, usuario, clave, perfil, estado* | El enlace "¿No tienes una cuenta? Regístrate aquí" abre el formulario `POST /registro`. Perfil: `cliente` o `administrador`. Estado por defecto **activo** para clientes (campo de solo lectura); el perfil administrador queda **pendiente** hasta que otro administrador lo active; también existe `anulado` | `templates/index.html`, `Formularios.RegistroForm`, `AuthService.registrar` |
 | 2a | Validación por **DNI** repetido | `usuarios.existsByDni` → "El DNI … ya está registrado" + índice único parcial `uq_usuarios_dni` en la BD | `AuthService`, `db/schema.sql` |
 | 2b | Validación por **usuario** repetido | `usuarios.existsByUsuarioIgnoreCase` → "El nombre de usuario … ya está en uso" + índice único `uq_usuarios_usuario (LOWER(usuario))` | `AuthService`, `db/schema.sql` |
 | 3 | **Redirección según perfil** al iniciar sesión | `administrador` → `/admin` (panel ERP) · `cliente`/`entrenador` → `/dashboard`. Las cuentas `pendiente` o `anulado` reciben un mensaje y no entran | `AuthViewController.iniciarSesion` |
@@ -278,7 +280,7 @@ Cómo se configuró (para reproducirlo en otro entorno):
 2. Orígenes autorizados: `http://localhost:8080` y `https://courthub-1fwc.onrender.com`. URIs de redirección: `http://localhost:8080/login/oauth2/code/google` y `https://courthub-1fwc.onrender.com/login/oauth2/code/google`.
 3. `GOOGLE_CLIENT_ID` y `GOOGLE_CLIENT_SECRET` se guardan como variables de entorno del servicio en Render (y, en local, en un archivo `.env` junto a `docker-compose.yml`, excluido de Git). Sin esas variables el botón muestra un aviso y todo lo demás funciona igual. `server.forward-headers-strategy=framework` hace que, detrás del proxy HTTPS de Render, el URI de retorno se construya con la URL pública.
 
-**Flujo para la demo:** registrarse desde el login (probar un DNI y un usuario repetidos) → intentar entrar (mensaje "pendiente de activación") → entrar como `admin` → *Usuarios → filtro Pendiente → Activar* → volver a entrar con la cuenta nueva → crear una cancha y una clase eligiendo deporte y nivel desde las listas cargadas de la BD.
+**Flujo para la demo:** registrarse desde el login (probar un DNI y un usuario repetidos) → entrar con la cuenta nueva (queda activa) → registrar otra con perfil Administrador (queda pendiente: mensaje de activación) → entrar como `admin` → *Usuarios → filtro Pendiente → Activar* → crear una cancha y una clase eligiendo deporte y nivel desde las listas cargadas de la BD.
 
 ## ☁️ Despliegue en la nube (Render + Vercel)
 
@@ -314,7 +316,7 @@ Funciona de punta a punta: acceso (usuario, correo y Google), registro con valid
 
 | Flujo | Estado actual | Nota |
 |-------|---------------|------|
-| **Pago de reservas** | **Simulado.** La pantalla valida el formato de la tarjeta en el navegador, pero no se envía a ningún proveedor y no existe tabla de pagos; la reserva se confirma sin cobro. Los métodos PayPal y Webpay son solo etiquetas. | Fase 2 (sandbox) o fase 4 (sin cobro en línea) |
+| **Pago de reservas** | **Registrado pero simulado.** Cada reserva deja su cobro en la tabla `pagos` (proveedor `simulado`), pero la tarjeta no se envía a ninguna pasarela y no se mueve dinero. Los métodos PayPal y Webpay son solo etiquetas. | Fase 2 (sandbox) |
 | **Pago de clases** | La clase tiene precio, pero la inscripción no cobra. | Fase 2 |
 | **Rol entrenador** | Se puede asignar a clases, pero no tiene ambiente propio: ve lo mismo que un cliente y no puede consultar sus clases ni sus alumnos (solo el administrador). | Pendiente |
 | **Estados de reserva** | El flujo normal crea reservas `confirmada`; `pendiente` y `completada` solo se asignan a mano desde el panel admin (las pasadas se clasifican por fecha, pero el estado no cambia solo). | Fase 2 (`pendiente` con pago) |

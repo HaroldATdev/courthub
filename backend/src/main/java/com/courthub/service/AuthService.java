@@ -17,7 +17,7 @@ import java.util.Set;
 /**
  * Registro y login (tercer avance).
  *  - Registro: valida DNI y usuario únicos; el perfil puede ser cliente o administrador;
- *    la cuenta nace en estado "pendiente" y solo el administrador la activa.
+ *    los clientes nacen "activos"; el perfil administrador nace "pendiente" hasta que otro administrador lo aprueba.
  *  - Login: por usuario o correo contra la BD; solo entran cuentas en estado "activo".
  */
 @Service
@@ -26,7 +26,8 @@ public class AuthService {
 
     public static final String MSG_PENDIENTE = "Tu cuenta está pendiente de activación por el administrador.";
     public static final String MSG_ANULADA = "Tu cuenta ha sido anulada. Contacta al administrador.";
-    public static final String MSG_REGISTRO_OK = "Registro exitoso. Tu cuenta quedará activa cuando el administrador la apruebe.";
+    public static final String MSG_REGISTRO_OK = "Registro exitoso. Tu cuenta ya está activa: inicia sesión.";
+    public static final String MSG_REGISTRO_ADMIN = "Registro exitoso. Una cuenta de administrador queda pendiente hasta que otro administrador la apruebe.";
 
     private static final Set<String> PERFILES_REGISTRO = Set.of(AuthUser.CLIENTE, AuthUser.ADMINISTRADOR);
 
@@ -61,15 +62,18 @@ public class AuthService {
             nombre = nombre.substring(0, i);
         }
         String rol = PERFILES_REGISTRO.contains(req.rol()) ? req.rol() : AuthUser.CLIENTE;
+        // Los clientes entran activos; quien pide el perfil de administrador queda pendiente hasta que
+        // otro administrador lo apruebe (si no, cualquiera podría darse acceso total al panel).
+        String estado = AuthUser.ADMINISTRADOR.equals(rol) ? Usuario.PENDIENTE : Usuario.ACTIVO;
 
         Usuario u = Usuario.builder()
                 .dni(dni).usuario(usuario)
                 .nombre(nombre).apellido(apellido).email(email)
                 .passwordHash(encoder.encode(req.password()))
-                .rol(rol).estado(Usuario.PENDIENTE)
+                .rol(rol).estado(estado)
                 .build();
         u = usuarios.save(u);
-        return new RegisterResponse(MSG_REGISTRO_OK, UsuarioDto.de(u));
+        return new RegisterResponse(AuthUser.ADMINISTRADOR.equals(rol) ? MSG_REGISTRO_ADMIN : MSG_REGISTRO_OK, UsuarioDto.de(u));
     }
 
     @Transactional(readOnly = true)
@@ -86,10 +90,9 @@ public class AuthService {
 
     /**
      * Inicio de sesión con Google: la identidad la confirma Google (OpenID Connect).
-     * Si el correo no existe se crea la cuenta como cliente en estado "pendiente" (la activa el
-     * administrador, igual que un registro normal). Solo las cuentas activas pueden entrar.
-     * noRollbackFor: la excepción "pendiente/anulada" es solo un aviso para el usuario; la cuenta recién
-     * creada debe quedar guardada (sin esto, Spring deshacía el INSERT al lanzar la excepción).
+     * Si el correo no existe se crea la cuenta como cliente en estado "activo" (Google ya verificó el correo).
+     * Una cuenta pendiente o anulada sigue sin entrar. El perfil administrador nunca se concede por esta vía.
+     * noRollbackFor: la excepción "pendiente/anulada" es solo un aviso para el usuario y no debe deshacer la transacción.
      */
     @Transactional(noRollbackFor = ApiException.class)
     public Usuario loginConGoogle(String email, String nombres, String apellidos) {
@@ -102,7 +105,7 @@ public class AuthService {
             return usuarios.save(Usuario.builder()
                     .usuario(usuario).nombre(nombres.trim()).apellido(apellidos.trim()).email(correo)
                     .passwordHash(encoder.encode(java.util.UUID.randomUUID().toString())) // sin clave local: entra solo con Google
-                    .rol(AuthUser.CLIENTE).estado(Usuario.PENDIENTE)
+                    .rol(AuthUser.CLIENTE).estado(Usuario.ACTIVO)
                     .build());
         });
         if (Usuario.PENDIENTE.equals(u.getEstado())) throw ApiException.forbidden(MSG_PENDIENTE);

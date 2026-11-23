@@ -91,13 +91,32 @@ public class DataInitializer {
         jdbc.update("UPDATE usuarios SET usuario = split_part(email, '@', 1) WHERE usuario IS NULL");
     }
 
+    /**
+     * Reservas anteriores a la tabla "pagos" (y las del seed) quedan con su cobro registrado:
+     * confirmada/completada -> aprobado, cancelada -> reembolsado; las pendientes no se cobraron.
+     * Es idempotente: solo toca reservas que aún no tienen ningún pago.
+     */
+    private void registrarPagosPendientes() {
+        int n = new JdbcTemplate(dataSource).update("""
+                INSERT INTO pagos (reserva_id, usuario_id, operacion, proveedor, metodo, subtotal, cargo_servicio, monto, estado, fecha_pago)
+                SELECT r.id, r.usuario_id, 'OP-' || LPAD(r.id::text, 8, '0'), 'simulado', r.metodo_pago,
+                       r.subtotal, r.cargo_servicio, r.total,
+                       CASE WHEN r.estado = 'cancelada' THEN 'reembolsado' ELSE 'aprobado' END, r.fecha_creacion
+                FROM reservas r
+                WHERE r.estado <> 'pendiente'
+                  AND NOT EXISTS (SELECT 1 FROM pagos p WHERE p.reserva_id = r.id)
+                """);
+        if (n > 0) log.info("[Pagos] Se registraron {} pagos de reservas existentes", n);
+    }
+
     @Bean
     public ApplicationRunner cargarDatosDemo() {
         return args -> {
             migrarTercerAvance();
-            if (!seedDemo) { aplicarClavesDeEntorno(); return; }
+            if (!seedDemo) { registrarPagosPendientes(); aplicarClavesDeEntorno(); return; }
             if (usuarioRepository.count() > 0) {
                 log.info("[Seed] La base de datos ya tiene datos; se omite db/seed.sql");
+                registrarPagosPendientes();
                 aplicarClavesDeEntorno();
                 return;
             }
@@ -107,6 +126,7 @@ public class DataInitializer {
                         new EncodedResource(new ClassPathResource("db/seed.sql"), StandardCharsets.UTF_8));
             }
             log.info("[Seed] Datos demo cargados. Usuarios: admin / gdiaz (clave Password123 salvo ADMIN_PASSWORD / DEMO_PASSWORD)");
+            registrarPagosPendientes();
             aplicarClavesDeEntorno();
         };
     }

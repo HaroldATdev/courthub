@@ -82,7 +82,12 @@ public class ReservaViewController {
         try {
             LocalDate fecha = Horarios.parseFecha(reservaForm.getFecha(), "Fecha inválida.");
             LocalTime inicio = Horarios.parseHora(reservaForm.getHoraInicio(), "Hora inválida.");
-            ReservaDto r = reservaService.crear(usuario.id(), reservaForm.getCanchaId(), fecha, inicio, reservaForm.getMetodoPago());
+            // Solo se conservan los últimos 4 dígitos de la tarjeta; el número completo y el CVV nunca se guardan
+            String numero = digitos(reservaForm.getNumeroTarjeta());
+            String ultimos4 = "Tarjeta de Crédito".equals(reservaForm.getMetodoPago()) && numero.length() >= 4
+                    ? numero.substring(numero.length() - 4) : null;
+            ReservaDto r = reservaService.crear(usuario.id(), reservaForm.getCanchaId(), fecha, inicio,
+                    reservaForm.getMetodoPago(), ultimos4);
             ra.addFlashAttribute("toast", "¡Reserva " + r.codigo() + " confirmada! Pago aprobado por " + r.total() + " soles.");
             return "redirect:/mis-reservas?ok=1";
         } catch (ApiException e) {
