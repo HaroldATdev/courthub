@@ -75,11 +75,10 @@
               <span class="text-[11px] font-semibold tracking-[.12em] text-gray-400">O CONTINUAR CON</span>
               <span class="h-px flex-1 bg-gray-100"></span>
             </div>
-            <div class="grid grid-cols-2 gap-3">
+            <div class="grid grid-cols-1 gap-3">
               <!-- Continuar con Google: enlace real al flujo OAuth2 cuando hay credenciales configuradas -->
               <a th:if="${googleHabilitado}" th:href="@{/oauth2/authorization/google}" class="social"><span data-icon="google" data-cls="w-[18px] h-[18px]"></span>Google</a>
               <button th:unless="${googleHabilitado}" type="button" class="social" data-social="Google" title="Configura GOOGLE_CLIENT_ID y GOOGLE_CLIENT_SECRET"><span data-icon="google" data-cls="w-[18px] h-[18px]"></span>Google</button>
-              <button type="button" class="social" data-social="Apple"><span data-icon="apple" data-cls="w-[18px] h-[18px]"></span>Apple</button>
             </div>
 
             <!-- Tercer avance (punto 2): enlace para registrarse desde el LOGIN -->
@@ -169,7 +168,6 @@
           </form>
         </div>
         <p class="text-center mt-7 text-sm text-slate-600">¿Necesitas ayuda? Ponte en contacto con <a href="#" class="link-green">Soporte CourtHub</a></p>
-        <p class="text-center mt-3 text-xs text-gray-400">Demo: usuario <b>gdiaz</b> (cliente) · usuario <b>admin</b> (administrador) · clave <b>Password123</b></p>
       </div>
     </section>
   </main>

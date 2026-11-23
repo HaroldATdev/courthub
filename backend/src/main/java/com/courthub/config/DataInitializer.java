@@ -1,6 +1,7 @@
 package com.courthub.config;
 
 import com.courthub.repository.UsuarioRepository;
+import com.courthub.service.AuthService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -43,6 +44,10 @@ public class DataInitializer {
     /** Clave de las cuentas demo (gdiaz, crojas, pmunoz, asoto, lperez) en producción (DEMO_PASSWORD). */
     @Value("${DEMO_PASSWORD:}")
     private String demoPassword;
+
+    /** Correos que deben ser administradores (ADMIN_EMAILS, separados por coma). Vacía = no se toca a nadie. */
+    @Value("${ADMIN_EMAILS:}")
+    private String adminEmails;
 
     private static final List<String> USUARIOS_DEMO = List.of("gdiaz", "crojas", "pmunoz", "asoto", "lperez");
 
@@ -89,6 +94,28 @@ public class DataInitializer {
             jdbc.update("ALTER TABLE usuarios DROP COLUMN activo");
         }
         jdbc.update("UPDATE usuarios SET usuario = split_part(email, '@', 1) WHERE usuario IS NULL");
+        // La foto de pádel del seed ya no existe en Unsplash (404): se reemplaza por la ilustración local
+        int fotos = jdbc.update("UPDATE canchas SET imagen_url = '/img/canchas/padel.svg' WHERE imagen_url LIKE '%photo-1606924842618%'");
+        if (fotos > 0) log.info("[Migración] {} cancha(s) con la imagen de pádel antigua usan ahora la ilustración local", fotos);
+    }
+
+    /**
+     * Administradores definidos por variable de entorno (ADMIN_EMAILS, correos separados por coma): si la cuenta ya
+     * existe se convierte en administrador activo; si no existe, se crea como administrador la primera vez que esa persona
+     * entra con Google (ver AuthService). Así el administrador sobrevive a un cambio o reinicio de la base de datos
+     * y el correo no queda escrito en el repositorio.
+     */
+    private void aplicarAdministradoresDeEntorno() {
+        for (String correo : AuthService.correosAdmin(adminEmails)) {
+            usuarioRepository.findByEmailIgnoreCase(correo).ifPresentOrElse(u -> {
+                if (!com.courthub.security.AuthUser.ADMINISTRADOR.equals(u.getRol()) || !u.estaActivo()) {
+                    u.setRol(com.courthub.security.AuthUser.ADMINISTRADOR);
+                    u.setEstado(com.courthub.model.Usuario.ACTIVO);
+                    usuarioRepository.save(u);
+                    log.info("[Seguridad] {} es administrador activo (ADMIN_EMAILS)", correo);
+                }
+            }, () -> log.info("[Seguridad] ADMIN_EMAILS: {} aún no tiene cuenta; será administrador al entrar con Google", correo));
+        }
     }
 
     /**
@@ -133,6 +160,7 @@ public class DataInitializer {
     public ApplicationRunner cargarDatosDemo() {
         return args -> {
             migrarTercerAvance();
+            aplicarAdministradoresDeEntorno();
             if (!seedDemo) { registrarPagosPendientes(); aplicarClavesDeEntorno(); return; }
             if (usuarioRepository.count() > 0) {
                 log.info("[Seed] La base de datos ya tiene datos; se omite db/seed.sql");
@@ -147,6 +175,7 @@ public class DataInitializer {
                         new EncodedResource(new ClassPathResource("db/seed.sql"), StandardCharsets.UTF_8));
             }
             log.info("[Seed] Datos demo cargados. Usuarios: admin / gdiaz (clave Password123 salvo ADMIN_PASSWORD / DEMO_PASSWORD)");
+            aplicarAdministradoresDeEntorno();
             registrarPagosPendientes();
             aplicarClavesDeEntorno();
         };

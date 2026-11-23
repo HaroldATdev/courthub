@@ -56,7 +56,7 @@ Sistema de reservas de canchas deportivas (fútbol, fulbito, pádel, tenis y squ
 
 | # | Pantalla diseñada | Elementos del prototipo |
 |---|--------------------|--------------------------|
-| 1 | **Login / Registro** | Pestañas Iniciar Sesión / Registrarse, campos con iconos, mostrar/ocultar contraseña, acceso social (Google/Apple), panel lateral con branding |
+| 1 | **Login / Registro** | Pestañas Iniciar Sesión / Registrarse, campos con iconos, mostrar/ocultar contraseña, acceso con Google, panel lateral con branding |
 | 2 | **Dashboard (canchas disponibles)** | Buscador, pills por deporte, filtros de distrito y rango de precio, tarjetas de cancha con foto, rating, disponibilidad "Hoy" y precio/hora |
 | 3 | **Detalle de cancha** | Galería, servicios con iconos, reglamento, **calendario mensual** + bloques horarios de 1.5 h (libres/ocupados) y resumen de selección |
 | 4 | **Pago** | Métodos (tarjeta/PayPal/Webpay), formato automático del número de tarjeta, resumen con subtotal, cargo por servicio y total |
@@ -195,6 +195,8 @@ El primer arranque tarda unos minutos (Maven descarga dependencias). La base de 
 > - **Reporte de ventas (`/admin/ventas`):** ventas por mes y por año con filtro de año y mes, indicadores (total, operaciones, ticket promedio, reembolsado), gráfico, detalle con enlace a cada boleta, exportación a CSV e impresión a PDF. Solo suman los pagos `aprobado`; los reembolsados se informan aparte.
 > - **Navegación:** todas las páginas tienen opción de retorno (*Volver a Canchas*, *Volver al resumen* en cada sección del panel, *Volver a iniciar sesión*, botón *Volver* en la página de error).
 
+> 👤 **Administradores por correo:** la variable `ADMIN_EMAILS` (correos separados por coma, solo en Render, no en el repositorio) convierte esas cuentas en administrador activo en cada arranque y, si la persona aún no tiene cuenta, la crea como administrador la primera vez que entra con Google. Así el administrador sobrevive a un cambio o reinicio de la base de datos.
+>
 > 🔐 **Claves en producción:** `Password123` solo vale para el entorno local. En el despliegue público la aplicación lee las variables `ADMIN_PASSWORD` (cuenta `admin`) y `DEMO_PASSWORD` (cuentas `gdiaz`, `crojas`, `pmunoz`, `asoto`, `lperez`) y sobrescribe las claves del seed en cada arranque (`DataInitializer.aplicarClavesDeEntorno`). Así la clave real nunca se publica en GitHub.
 
 ---
@@ -368,7 +370,7 @@ Funciona de punta a punta: acceso (usuario, correo y Google) con verificación e
 | **Reembolsos y cancelación** | El pago pasa a `reembolsado` en la base, pero no hay devolución en la pasarela, no existen los "créditos CourtHub" que menciona el mensaje y no se aplica la regla de las 24 horas. |
 | **Boleta** | Comprobante de demostración (serie `B001`, RUC ficticio): no se envía a SUNAT y no existe factura. |
 | **Horarios por cancha** | La tabla `disponibilidad_canchas` existe pero no se usa: todas las canchas tienen los mismos bloques (08:00 a 23:00). |
-| **Elementos sin función** | Botón Apple, campana de notificaciones, "Recordarme", interruptor "Disponible Hoy", Soporte y términos y condiciones. |
+| **Elementos sin función** | Campana de notificaciones, "Recordarme", interruptor "Disponible Hoy", Soporte y términos y condiciones. |
 | **Pruebas automatizadas** | No hay tests en el repositorio; la verificación se hizo con scripts contra la aplicación en ejecución. |
 | **Límite de intentos de login** | No hay bloqueo por intentos fallidos de contraseña (el código del 2FA sí limita a 5 intentos). |
 

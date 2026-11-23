@@ -15,10 +15,10 @@ window.CH = window.CH || {};
     return CH.cap(dt.toLocaleDateString('es-PE', opts || { weekday: 'long', day: 'numeric', month: 'short' }));
   };
 
-  /** Fallback de imagen si Unsplash falla (picsum con semilla determinista). */
-  CH.imgFallback = function (img, seed) {
+  /** Fallback de imagen si la foto externa falla: ilustración local (no depende de internet). */
+  CH.imgFallback = function (img) {
     img.onerror = null;
-    img.src = 'https://picsum.photos/seed/' + (seed || 'courthub') + '/900/560';
+    img.src = '/img/canchas/cancha.svg';
   };
 
   /* ---------- Toast ---------- */
@@ -73,7 +73,9 @@ window.CH = window.CH || {};
 
     // Fallback de imágenes: <img data-fallback="semilla">
     document.querySelectorAll('img[data-fallback]').forEach(function (img) {
-      img.addEventListener('error', function () { CH.imgFallback(img, img.getAttribute('data-fallback')); });
+      img.addEventListener('error', function () { CH.imgFallback(img); });
+      // si la imagen ya falló antes de que este script cargara, el evento "error" no se repite
+      if (img.complete && img.naturalWidth === 0) CH.imgFallback(img);
     });
 
     // Confirmaciones: <form data-confirm="¿Seguro?">

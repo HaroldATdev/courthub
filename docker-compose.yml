@@ -65,6 +65,7 @@ services:
       CULQI_API_URL: ${CULQI_API_URL:-https://api.culqi.com/v2}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
     ports:
       - "${APP_PORT:-8080}:8080"   # cambia el puerto del host con APP_PORT=8090 docker compose up
     depends_on:

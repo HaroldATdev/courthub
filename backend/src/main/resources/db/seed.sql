@@ -18,7 +18,7 @@ INSERT INTO canchas (nombre, tipo, subtipo, descripcion, direccion, comuna, prec
   ('Club Pádel San Damian', 'padel', 'Pádel · Indoor',
    'Canchas de pádel indoor de última generación con cristal templado y césped Mondo. Academia propia, tienda especializada y zonas de descanso.',
    'Av. Larco 851, Miraflores', 'Miraflores', 105, 4.9, 124,
-   'https://images.unsplash.com/photo-1606924842618-bdb0a07582f7?auto=format&fit=crop&w=1000&q=70', TRUE,
+   '/img/canchas/padel.svg', TRUE,
    ARRAY['Estacionamiento','Duchas de agua caliente','Iluminación LED','Vestuarios','Cafetería & Bar','WiFi gratuito'],
    'Se solicita llegar con 10 minutos de anticipación. Cancelaciones hasta 24 horas antes para reembolso en créditos CourtHub.'),
   ('Complejo Deportivo El Roble', 'futbol', 'Fútbol 7 & 11',
@@ -44,7 +44,7 @@ INSERT INTO canchas (nombre, tipo, subtipo, descripcion, direccion, comuna, prec
   ('Pádel Premium Surco', 'padel', 'Pádel · Panorámico',
    'Pistas panorámicas con vista a la cordillera. Césped de última generación, palas de arriendo premium y terraza.',
    'Av. El Polo 780, Santiago de Surco', 'Santiago de Surco', 130, 4.9, 210,
-   'https://images.unsplash.com/photo-1606924842618-bdb0a07582f7?auto=format&fit=crop&w=1000&q=70', TRUE,
+   '/img/canchas/padel.svg', TRUE,
    ARRAY['Estacionamiento','Duchas de agua caliente','Iluminación LED','Vestuarios','Cafetería & Bar','WiFi gratuito'],
    'Se solicita llegar con 10 minutos de anticipación. Cancelaciones hasta 24 horas antes.'),
   ('Gimnasio Polideportivo Oriente', 'futbol', 'Fútbol · Indoor',
@@ -68,7 +68,7 @@ INSERT INTO canchas (nombre, tipo, subtipo, descripcion, direccion, comuna, prec
   ('Pádel Center Sur', 'padel', 'Pádel · Indoor',
    'Centro de pádel con 4 canchas indoor, muros de cristal de 12 mm y escuela para niños y adultos.',
    'Av. Defensores del Morro 1500, Chorrillos', 'Chorrillos', 105, 4.6, 58,
-   'https://images.unsplash.com/photo-1606924842618-bdb0a07582f7?auto=format&fit=crop&w=1000&q=70', TRUE,
+   '/img/canchas/padel.svg', TRUE,
    ARRAY['Estacionamiento','Duchas de agua caliente','Iluminación LED','Vestuarios','WiFi gratuito'],
    'Se solicita llegar con 10 minutos de anticipación. Cancelaciones hasta 24 horas antes.');
 

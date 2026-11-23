@@ -35,6 +35,16 @@ public class AuthService {
     private final PasswordEncoder encoder;
     private final JwtService jwt;
 
+    /** Correos que deben ser administradores (variable ADMIN_EMAILS, separados por coma). */
+    @org.springframework.beans.factory.annotation.Value("${ADMIN_EMAILS:}")
+    private String adminEmails;
+
+    /** "a@x.com, B@y.com" -> ["a@x.com", "b@y.com"] */
+    public static java.util.List<String> correosAdmin(String lista) {
+        if (lista == null || lista.isBlank()) return java.util.List.of();
+        return java.util.Arrays.stream(lista.split(",")).map(String::trim).filter(x -> !x.isEmpty()).map(String::toLowerCase).toList();
+    }
+
     @Transactional
     public RegisterResponse registrar(RegisterRequest req) {
         String dni = req.dni().trim();
@@ -117,7 +127,8 @@ public class AuthService {
             return usuarios.save(Usuario.builder()
                     .usuario(usuario).nombre(nombres.trim()).apellido(apellidos.trim()).email(correo)
                     .passwordHash(encoder.encode(java.util.UUID.randomUUID().toString())) // sin clave local: entra solo con Google
-                    .rol(AuthUser.CLIENTE).estado(Usuario.ACTIVO)
+                    // Google ya verificó el correo: si está en ADMIN_EMAILS entra como administrador, si no, como cliente
+                    .rol(correosAdmin(adminEmails).contains(correo) ? AuthUser.ADMINISTRADOR : AuthUser.CLIENTE).estado(Usuario.ACTIVO)
                     .build());
         });
         if (Usuario.PENDIENTE.equals(u.getEstado())) throw ApiException.forbidden(MSG_PENDIENTE);
