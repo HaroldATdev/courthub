@@ -109,6 +109,26 @@ public class DataInitializer {
         if (n > 0) log.info("[Pagos] Se registraron {} pagos de reservas existentes", n);
     }
 
+    /**
+     * Las clases del seed se cargaron con fechas relativas al día del primer arranque y envejecen: pasada una semana
+     * ya no aparecen en el listado y la demo queda vacía. En modo demo, cada arranque vuelve a poner las clases del
+     * seed que ya pasaron en los próximos días (solo esas 5 por nombre; las clases que cree el administrador no se tocan).
+     */
+    private void renovarClasesDemo() {
+        int n = new JdbcTemplate(dataSource).update("""
+                UPDATE clases SET fecha = ?::date + CASE nombre
+                    WHEN 'Pádel Inicial: Golpes Básicos'     THEN 2
+                    WHEN 'Clínica de Fútbol 7: Definición'   THEN 3
+                    WHEN 'Squash para Principiantes'         THEN 4
+                    WHEN 'Tenis Intermedio: Derecha y Revés' THEN 5
+                    WHEN 'Fulbito Amistoso + Táctica'        THEN 6 END
+                WHERE fecha < ?::date
+                  AND nombre IN ('Pádel Inicial: Golpes Básicos', 'Clínica de Fútbol 7: Definición', 'Squash para Principiantes',
+                                 'Tenis Intermedio: Derecha y Revés', 'Fulbito Amistoso + Táctica')
+                """, java.sql.Date.valueOf(com.courthub.util.Horarios.hoy()), java.sql.Date.valueOf(com.courthub.util.Horarios.hoy()));
+        if (n > 0) log.info("[Seed] {} clase(s) de demostración vencidas se reprogramaron para los próximos días", n);
+    }
+
     @Bean
     public ApplicationRunner cargarDatosDemo() {
         return args -> {
@@ -116,6 +136,7 @@ public class DataInitializer {
             if (!seedDemo) { registrarPagosPendientes(); aplicarClavesDeEntorno(); return; }
             if (usuarioRepository.count() > 0) {
                 log.info("[Seed] La base de datos ya tiene datos; se omite db/seed.sql");
+                renovarClasesDemo();
                 registrarPagosPendientes();
                 aplicarClavesDeEntorno();
                 return;
