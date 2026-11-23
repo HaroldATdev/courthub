@@ -52,7 +52,7 @@ public class GoogleLoginHandler implements AuthenticationSuccessHandler, Authent
         try {
             Usuario u = authService.loginConGoogle(email, nombres, apellidos == null ? "" : apellidos);
             response.addHeader(HttpHeaders.SET_COOKIE, TokenCookie.crear(jwtService.generar(u), jwtService.getHorasExpiracion()).toString());
-            response.sendRedirect(AuthUser.ADMINISTRADOR.equals(u.getRol()) ? "/admin" : "/dashboard");
+            response.sendRedirect(AuthUser.inicioDe(u.getRol()));
         } catch (ApiException e) {
             String motivo = e.getMessage().contains("anulada") ? "anulada" : "pendiente";
             response.sendRedirect("/login?google=" + motivo);

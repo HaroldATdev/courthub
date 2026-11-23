@@ -12,6 +12,17 @@ public record AuthUser(Long id, String email, String rol, String nombre, String 
 
     public boolean esAdmin() { return ADMINISTRADOR.equals(rol); }
 
+    public boolean esEntrenador() { return ENTRENADOR.equals(rol); }
+
+    /** Página de inicio según el perfil: panel ERP, ambiente del entrenador o dashboard del cliente. */
+    public static String inicioDe(String rol) {
+        return switch (rol == null ? "" : rol) {
+            case ADMINISTRADOR -> "/admin";
+            case ENTRENADOR -> "/entrenador";
+            default -> "/dashboard";
+        };
+    }
+
     public String nombreCompleto() { return (nombre + " " + (apellido == null ? "" : apellido)).trim(); }
 
     public String iniciales() {

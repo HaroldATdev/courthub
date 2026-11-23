@@ -76,8 +76,9 @@ public class AuthService {
         return new RegisterResponse(AuthUser.ADMINISTRADOR.equals(rol) ? MSG_REGISTRO_ADMIN : MSG_REGISTRO_OK, UsuarioDto.de(u));
     }
 
+    /** Primer paso del acceso: usuario/correo + clave contra la BD y cuenta activa. No emite el JWT. */
     @Transactional(readOnly = true)
-    public AuthResponse login(LoginRequest req) {
+    public Usuario validarCredenciales(LoginRequest req) {
         Usuario u = usuarios.findByUsuarioOEmail(req.usuario().trim())
                 .orElseThrow(() -> ApiException.unauthorized("Credenciales incorrectas."));
         if (!encoder.matches(req.password(), u.getPasswordHash())) {
@@ -85,7 +86,18 @@ public class AuthService {
         }
         if (Usuario.PENDIENTE.equals(u.getEstado())) throw ApiException.forbidden(MSG_PENDIENTE);
         if (Usuario.ANULADO.equals(u.getEstado())) throw ApiException.forbidden(MSG_ANULADA);
+        return u;
+    }
+
+    /** Emite el JWT de un usuario ya autenticado (tras la clave y, si está activa, la verificación en dos pasos). */
+    public AuthResponse emitir(Usuario u) {
         return new AuthResponse(jwt.generar(u), UsuarioDto.de(u));
+    }
+
+    /** Acceso sin segundo factor (se usa cuando el 2FA está desactivado). */
+    @Transactional(readOnly = true)
+    public AuthResponse login(LoginRequest req) {
+        return emitir(validarCredenciales(req));
     }
 
     /**

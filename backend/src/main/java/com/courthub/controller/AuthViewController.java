@@ -9,7 +9,9 @@ import com.courthub.dto.form.Formularios.RegistroForm;
 import com.courthub.exception.ApiException;
 import com.courthub.security.AuthUser;
 import com.courthub.security.TokenCookie;
+import com.courthub.model.Usuario;
 import com.courthub.service.AuthService;
+import com.courthub.service.DosFactoresService;
 import com.courthub.service.JwtService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -38,6 +40,7 @@ public class AuthViewController {
 
     private final AuthService authService;
     private final JwtService jwtService;
+    private final DosFactoresService dosFactores;
 
     @GetMapping("/")
     public String inicio(@AuthenticationPrincipal AuthUser usuario) {
@@ -78,12 +81,59 @@ public class AuthViewController {
             return "index";
         }
         try {
-            AuthResponse auth = authService.login(new LoginRequest(loginForm.getUsuario(), loginForm.getPassword()));
-            return iniciarSesion(auth, response);
+            Usuario u = authService.validarCredenciales(new LoginRequest(loginForm.getUsuario(), loginForm.getPassword()));
+            if (dosFactores.habilitado()) {
+                // Segundo paso: código de 6 dígitos enviado al correo de la cuenta
+                return pantallaVerificacion(model, dosFactores.iniciar(u), u.getEmail(), null);
+            }
+            return iniciarSesion(authService.emitir(u), response);
         } catch (ApiException e) {
             model.addAttribute("loginError", e.getMessage());
             return "index";
         }
+    }
+
+    /** Segundo paso del acceso: valida el código enviado al correo. */
+    @PostMapping("/login/verificar")
+    public String verificar(@RequestParam String desafio, @RequestParam(defaultValue = "") String codigo,
+                            Model model, HttpServletResponse response) {
+        try {
+            Usuario u = dosFactores.verificar(desafio, codigo);
+            return iniciarSesion(authService.emitir(u), response);
+        } catch (ApiException e) {
+            if (e.getStatus() == HttpStatus.UNAUTHORIZED && e.getMessage().startsWith("Código incorrecto")) {
+                model.addAttribute("desafio", desafio);
+                model.addAttribute("error2fa", e.getMessage());
+                model.addAttribute("correo", "tu correo");
+                return "verificar-2fa";
+            }
+            // Código vencido, agotado o inválido: hay que volver a empezar
+            model.addAttribute("tab", "login");
+            model.addAttribute("loginForm", new LoginForm());
+            model.addAttribute("registroForm", new RegistroForm());
+            model.addAttribute("loginError", e.getMessage());
+            return "index";
+        }
+    }
+
+    @PostMapping("/login/reenviar")
+    public String reenviar(@RequestParam String desafio, Model model) {
+        try {
+            String nuevo = dosFactores.reenviar(desafio);
+            return pantallaVerificacion(model, nuevo, null, "Te enviamos un código nuevo.");
+        } catch (ApiException e) {
+            model.addAttribute("desafio", desafio);
+            model.addAttribute("error2fa", e.getMessage());
+            model.addAttribute("correo", "tu correo");
+            return "verificar-2fa";
+        }
+    }
+
+    private String pantallaVerificacion(Model model, String desafio, String email, String info) {
+        model.addAttribute("desafio", desafio);
+        model.addAttribute("correo", email == null ? "tu correo" : DosFactoresService.enmascarar(email));
+        if (info != null) model.addAttribute("info2fa", info);
+        return "verificar-2fa";
     }
 
     @PostMapping("/registro")
@@ -125,11 +175,11 @@ public class AuthViewController {
 
     private String iniciarSesion(AuthResponse auth, HttpServletResponse response) {
         response.addHeader(HttpHeaders.SET_COOKIE, TokenCookie.crear(auth.token(), jwtService.getHorasExpiracion()).toString());
-        return "redirect:" + (AuthUser.ADMINISTRADOR.equals(auth.usuario().rol()) ? "/admin" : "/dashboard");
+        return "redirect:" + AuthUser.inicioDe(auth.usuario().rol());
     }
 
     private static String destino(AuthUser usuario) {
         if (usuario == null) return "/login";
-        return usuario.esAdmin() ? "/admin" : "/dashboard";
+        return AuthUser.inicioDe(usuario.rol());
     }
 }

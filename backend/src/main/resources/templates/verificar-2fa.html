@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<!-- Vista: verificación en dos pasos (código enviado al correo) · Controlador: AuthViewController#verificar / #reenviar -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Verificación en dos pasos')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen grid place-items-center px-4 py-10">
+  <main class="w-full max-w-[440px] fade-up">
+    <div class="flex items-center justify-center gap-2.5 mb-8">
+      <span class="w-10 h-10 rounded-xl bg-primary-500 grid place-items-center text-white" data-icon="logo" data-cls="w-5 h-5"></span>
+      <span class="font-display font-bold text-[22px] text-slate-900">CourtHub</span>
+    </div>
+    <div class="bg-white rounded-3xl shadow-[0_24px_70px_-24px_rgba(16,24,40,.28)] p-7 sm:p-10">
+      <h1 class="font-display text-2xl font-bold text-slate-900">Verifica tu identidad</h1>
+      <p class="text-sm text-gray-500 mt-1.5">Enviamos un código de 6 dígitos a <b class="text-slate-700" th:text="${correo}">tu correo</b>. Ingrésalo para continuar. Vale 10 minutos.</p>
+
+      <p th:if="${info2fa}" th:text="${info2fa}" class="mt-5 text-sm text-primary-700 bg-primary-50 border border-primary-100 rounded-xl px-4 py-3"></p>
+      <p th:if="${error2fa}" th:text="${error2fa}" class="mt-5 text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-4 py-3"></p>
+
+      <form th:action="@{/login/verificar}" method="post" class="space-y-5 mt-6">
+        <input type="hidden" name="desafio" th:value="${desafio}">
+        <div>
+          <label class="ch-label" for="codigo">Código de verificación</label>
+          <div class="input-wrap">
+            <span data-icon="lock" data-cls="w-[18px] h-[18px]"></span>
+            <input id="codigo" name="codigo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" required autofocus
+                   class="ch-input tracking-[0.4em] text-center font-semibold" placeholder="••••••" autocomplete="one-time-code">
+          </div>
+        </div>
+        <button type="submit" class="btn-primary w-full !py-3.5">Verificar y entrar</button>
+      </form>
+
+      <form th:action="@{/login/reenviar}" method="post" class="mt-5 text-center text-sm text-slate-600">
+        <input type="hidden" name="desafio" th:value="${desafio}">
+        ¿No te llegó? <button type="submit" class="link-green">Reenviar código</button>
+      </form>
+      <p class="text-center text-sm text-slate-600 mt-4"><a th:href="@{/login}" class="link-green">← Volver a iniciar sesión</a></p>
+    </div>
+  </main>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

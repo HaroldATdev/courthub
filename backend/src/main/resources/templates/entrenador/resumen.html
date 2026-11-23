@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<!-- Vista del entrenador: resumen de clases · Controlador: EntrenadorViewController#panel -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Mi ambiente · Entrenador')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('entrenador')}"></header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10 pt-8">
+    <div class="flex flex-wrap items-end justify-between gap-3">
+      <div>
+        <p class="ch-label-tiny">Ambiente del entrenador</p>
+        <h1 class="font-display text-3xl font-bold text-slate-900 mt-1" th:text="'Hola, ' + ${usuario.nombre}">Hola</h1>
+        <p class="text-sm text-gray-500 mt-1.5">Tus clases, tus alumnos y lo cobrado por tus inscripciones.</p>
+      </div>
+      <div class="flex gap-2">
+        <a th:href="@{/clases}" class="btn-outline !py-2">Ver clases como alumno</a>
+        <a th:href="@{/dashboard}" class="btn-outline !py-2">Reservar una cancha</a>
+      </div>
+    </div>
+
+    <!-- Indicadores -->
+    <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-6">
+      <div class="card p-5"><p class="ch-label-tiny">Mis clases</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${p.totalClases}"></p><p class="text-xs text-gray-400 mt-1" th:text="${#lists.size(p.proximas)} + ' próximas'"></p></div>
+      <div class="card p-5"><p class="ch-label-tiny">Alumnos en próximas clases</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${p.alumnosActivos}"></p></div>
+      <div class="card p-5"><p class="ch-label-tiny">Asistencias registradas</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${p.asistencias}"></p></div>
+      <div class="card p-5"><p class="ch-label-tiny">Cobrado por mis clases</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${@fmt.pen(p.ingresos)}"></p><p class="text-xs text-gray-400 mt-1">Pagos aprobados</p></div>
+    </div>
+
+    <!-- Próximas -->
+    <h2 class="font-display text-xl font-bold text-slate-900 mt-9">Próximas clases</h2>
+    <p th:if="${#lists.isEmpty(p.proximas)}" class="text-sm text-gray-400 mt-3">No tienes clases programadas. El administrador te asigna las clases desde su panel.</p>
+    <div class="space-y-3 mt-4">
+      <article th:each="c : ${p.proximas}" class="card p-5 flex flex-col md:flex-row md:items-center gap-4">
+        <div class="flex-1 min-w-0">
+          <div class="flex items-center gap-2 flex-wrap">
+            <h3 class="font-display font-semibold text-slate-900" th:text="${c.nombre}"></h3>
+            <span class="tag" th:text="${@fmt.deporte(c.deporte)}"></span>
+            <span class="badge badge-pendiente" th:text="${c.nivel}"></span>
+            <span th:unless="${c.activa}" class="badge badge-cancelada">Inactiva</span>
+          </div>
+          <p class="text-sm text-gray-500 mt-1" th:text="${@fmt.fechaMedia(c.fecha)} + ' · ' + ${c.horaInicio} + ' - ' + ${c.horaFin} + ' hrs · ' + ${c.cancha}"></p>
+        </div>
+        <div class="text-sm min-w-[150px]">
+          <div class="flex justify-between text-xs mb-1"><span class="text-gray-500">Alumnos</span><span class="font-semibold text-slate-700" th:text="${c.inscritos} + ' / ' + ${c.cupoMax}"></span></div>
+          <div class="h-1.5 bg-gray-100 rounded-full overflow-hidden"><div class="h-full bg-primary-500 rounded-full" th:style="'width:' + ${@fmt.pct(c.inscritos, c.cupoMax)} + '%'"></div></div>
+        </div>
+        <div class="text-right min-w-[110px]"><p class="ch-label-tiny">Cobrado</p><p class="font-display font-bold text-slate-900" th:text="${@fmt.pen(c.ingresos)}"></p></div>
+        <a th:href="@{/entrenador/clases/{id}(id=${c.id})}" class="btn-primary !px-4 !py-2 !text-[13px]">Ver alumnos</a>
+      </article>
+    </div>
+
+    <!-- Anteriores -->
+    <h2 class="font-display text-xl font-bold text-slate-900 mt-9">Clases anteriores</h2>
+    <p th:if="${#lists.isEmpty(p.pasadas)}" class="text-sm text-gray-400 mt-3">Aún no tienes clases anteriores.</p>
+    <div class="card overflow-hidden mt-4" th:unless="${#lists.isEmpty(p.pasadas)}"><div class="overflow-x-auto"><table class="admin-table">
+      <thead><tr><th>Clase</th><th>Fecha</th><th>Alumnos</th><th>Asistieron</th><th>Cobrado</th><th></th></tr></thead>
+      <tbody>
+        <tr th:each="c : ${p.pasadas}">
+          <td th:text="${c.nombre}"></td>
+          <td class="text-xs" th:text="${@fmt.fechaMedia(c.fecha)}"></td>
+          <td th:text="${c.inscritos}"></td>
+          <td th:text="${c.asistieron}"></td>
+          <td class="font-semibold" th:text="${@fmt.pen(c.ingresos)}"></td>
+          <td><a th:href="@{/entrenador/clases/{id}(id=${c.id})}" class="btn-outline !py-1 !px-2.5 !text-xs">Ver alumnos</a></td>
+        </tr>
+      </tbody>
+    </table></div></div>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

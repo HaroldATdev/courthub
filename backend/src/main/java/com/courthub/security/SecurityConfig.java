@@ -55,7 +55,7 @@ public class SecurityConfig {
                     .accessDeniedHandler(JsonAuthHandlers.accessDenied()))
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
-                    .requestMatchers("/api/health", "/api/auth/login", "/api/auth/register").permitAll()
+                    .requestMatchers("/api/health", "/api/auth/login", "/api/auth/register", "/api/auth/2fa").permitAll()
                     .requestMatchers("/api/admin/**").hasRole("ADMINISTRADOR")
                     .anyRequest().authenticated())
             .addFilterBefore(new JwtAuthFilter(jwtService, usuarioRepository), UsernamePasswordAuthenticationFilter.class);
@@ -74,9 +74,10 @@ public class SecurityConfig {
                     .accessDeniedPage("/acceso-denegado"))
             .authorizeHttpRequests(auth -> auth
                     .requestMatchers("/", "/login", "/registro", "/acceso-denegado", "/error",
-                            "/oauth2/**", "/login/oauth2/**", "/olvide-clave", "/restablecer",
+                            "/oauth2/**", "/login/oauth2/**", "/login/verificar", "/login/reenviar", "/olvide-clave", "/restablecer",
                             "/css/**", "/js/**", "/img/**", "/favicon.ico").permitAll()
                     .requestMatchers("/admin/**").hasRole("ADMINISTRADOR")
+                    .requestMatchers("/entrenador/**").hasRole("ENTRENADOR")
                     .anyRequest().authenticated())
             .formLogin(f -> f.disable())
             .httpBasic(b -> b.disable())

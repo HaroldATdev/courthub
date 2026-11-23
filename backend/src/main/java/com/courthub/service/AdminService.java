@@ -369,7 +369,7 @@ public class AdminService {
         Clase k = clases.findWithDetalleById(id).orElseThrow(() -> ApiException.notFound("Clase no encontrada."));
         aplicar(k, req);
         clases.save(k);
-        int inscritos = (int) inscripciones.countByClaseIdAndEstado(id, Inscripcion.INSCRITO);
+        int inscritos = (int) inscripciones.countByClaseIdAndEstadoIn(id, Inscripcion.ACTIVAS);
         return ClaseDto.de(clases.findWithDetalleById(id).orElseThrow(), inscritos, false);
     }
 
@@ -378,7 +378,7 @@ public class AdminService {
         Clase k = clases.findWithDetalleById(id).orElseThrow(() -> ApiException.notFound("Clase no encontrada."));
         k.setActiva(req.activa() == null ? !k.getActiva() : req.activa());
         clases.save(k);
-        int inscritos = (int) inscripciones.countByClaseIdAndEstado(id, Inscripcion.INSCRITO);
+        int inscritos = (int) inscripciones.countByClaseIdAndEstadoIn(id, Inscripcion.ACTIVAS);
         return ClaseDto.de(k, inscritos, false);
     }
 
@@ -399,7 +399,7 @@ public class AdminService {
         int cupo = req.cupoMaximo() == null ? 12 : req.cupoMaximo();
         if (cupo <= 0) throw ApiException.badRequest("El cupo máximo debe ser mayor a 0.");
         if (k.getId() != null) {
-            long inscritos = inscripciones.countByClaseIdAndEstado(k.getId(), Inscripcion.INSCRITO);
+            long inscritos = inscripciones.countByClaseIdAndEstadoIn(k.getId(), Inscripcion.ACTIVAS);
             if (cupo < inscritos) throw ApiException.badRequest("El cupo no puede ser menor que los inscritos actuales (" + inscritos + ").");
         }
         String deporte = req.deporte().trim().toLowerCase();
@@ -437,8 +437,8 @@ public class AdminService {
             throw ApiException.badRequest("Estado inválido. Usa: inscrito, cancelado o asistio.");
         }
         Inscripcion i = inscripciones.findById(id).orElseThrow(() -> ApiException.notFound("Inscripción no encontrada."));
-        if (Inscripcion.INSCRITO.equals(req.estado()) && !Inscripcion.INSCRITO.equals(i.getEstado())) {
-            long ocupados = inscripciones.countByClaseIdAndEstado(i.getClase().getId(), Inscripcion.INSCRITO);
+        if (Inscripcion.ACTIVAS.contains(req.estado()) && !i.estaActiva()) {
+            long ocupados = inscripciones.countByClaseIdAndEstadoIn(i.getClase().getId(), Inscripcion.ACTIVAS);
             if (ocupados >= i.getClase().getCupoMaximo()) throw ApiException.conflict("El cupo de la clase está lleno.");
         }
         boolean estabaCancelada = Inscripcion.CANCELADO.equals(i.getEstado());

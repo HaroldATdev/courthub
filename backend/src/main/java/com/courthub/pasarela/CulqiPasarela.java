@@ -32,7 +32,7 @@ public class CulqiPasarela implements PasarelaPago {
 
     public CulqiPasarela(@Value("${CULQI_SECRET_KEY}") String llavePrivada,
                          @Value("${CULQI_API_URL:https://api.culqi.com/v2}") String apiUrl) {
-        this.http = RestClient.builder()
+        this.http = com.courthub.util.Http.builder()
                 .baseUrl(apiUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + llavePrivada)
                 .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
@@ -55,7 +55,8 @@ public class CulqiPasarela implements PasarelaPago {
         cuerpo.put("source_id", c.token());
         cuerpo.put("description", recortar(c.descripcion(), 80));
         try {
-            String respuesta = http.post().uri("/charges").body(cuerpo)
+            byte[] bytes = json.writeValueAsBytes(cuerpo);   // con Content-Length explícito (sin transfer-encoding chunked)
+            String respuesta = http.post().uri("/charges").contentLength(bytes.length).body(bytes)
                     .exchange((req, res) -> {
                         String texto = new String(res.getBody().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
                         return (res.getStatusCode().is2xxSuccessful() ? "OK|" : "ERR|") + texto;

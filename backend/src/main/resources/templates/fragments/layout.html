@@ -43,6 +43,7 @@
       <a th:href="@{/clases}" class="transition" th:classappend="${activo == 'clases'} ? 'text-primary-600 font-semibold' : 'text-slate-500 hover:text-slate-800'">Clases</a>
       <a th:href="@{/mis-reservas}" class="transition" th:classappend="${activo == 'reservas'} ? 'text-primary-600 font-semibold' : 'text-slate-500 hover:text-slate-800'">Mis Reservas</a>
       <a th:if="${esAdmin}" th:href="@{/admin}" class="transition" th:classappend="${activo == 'admin'} ? 'text-primary-600 font-semibold' : 'text-slate-500 hover:text-slate-800'">Administración</a>
+      <a th:if="${esEntrenador}" th:href="@{/entrenador}" class="transition" th:classappend="${activo == 'entrenador'} ? 'text-primary-600 font-semibold' : 'text-slate-500 hover:text-slate-800'">Mi ambiente</a>
     </nav>
     <button id="ch-bell" type="button" title="Notificaciones" class="relative w-10 h-10 rounded-full grid place-items-center text-slate-500 hover:bg-gray-100 transition shrink-0">
       <span data-icon="bell" data-cls="w-5 h-5"></span>
@@ -66,6 +67,7 @@
         <a th:href="@{/mis-reservas}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-gray-50"><span data-icon="calendar" data-cls="w-4 h-4"></span>Mis Reservas</a>
         <a th:href="@{/clases}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-slate-600 hover:bg-gray-50"><span data-icon="activity" data-cls="w-4 h-4"></span>Clases Deportivas</a>
         <a th:if="${esAdmin}" th:href="@{/admin}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-primary-700 font-semibold hover:bg-primary-50"><span data-icon="shieldCheck" data-cls="w-4 h-4"></span>Panel de Administración</a>
+        <a th:if="${esEntrenador}" th:href="@{/entrenador}" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-primary-700 font-semibold hover:bg-primary-50"><span data-icon="activity" data-cls="w-4 h-4"></span>Mi ambiente de entrenador</a>
         <a th:href="@{/logout}" class="w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm text-red-500 hover:bg-red-50 mt-1 border-t border-gray-50 pt-2.5"><span data-icon="logout" data-cls="w-4 h-4"></span>Cerrar sesión</a>
       </div>
     </div>

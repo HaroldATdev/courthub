@@ -15,14 +15,16 @@ public interface InscripcionRepository extends JpaRepository<Inscripcion, Long> 
 
     long countByClaseIdAndEstado(Long claseId, String estado);
 
+    long countByClaseIdAndEstadoIn(Long claseId, java.util.Collection<String> estados);
+
     long countByEstado(String estado);
 
     /** Ids de clases en las que el usuario está inscrito. */
-    @Query("SELECT i.clase.id FROM Inscripcion i WHERE i.usuario.id = :usuarioId AND i.estado = 'inscrito'")
+    @Query("SELECT i.clase.id FROM Inscripcion i WHERE i.usuario.id = :usuarioId AND i.estado IN ('inscrito', 'asistio')")
     List<Long> clasesInscritas(@Param("usuarioId") Long usuarioId);
 
     /** Inscritos activos por clase: [claseId, cantidad]. */
-    @Query("SELECT i.clase.id, COUNT(i) FROM Inscripcion i WHERE i.estado = 'inscrito' GROUP BY i.clase.id")
+    @Query("SELECT i.clase.id, COUNT(i) FROM Inscripcion i WHERE i.estado IN ('inscrito', 'asistio') GROUP BY i.clase.id")
     List<Object[]> contarInscritosPorClase();
 
     @EntityGraph(attributePaths = {"usuario", "clase"})

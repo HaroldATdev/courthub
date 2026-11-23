@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!-- Vista del entrenador: alumnos de una clase y asistencia · Controlador: EntrenadorViewController#alumnos / #asistencia -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Alumnos de la clase')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('entrenador')}"></header>
+
+  <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10">
+    <div class="flex items-center gap-2 text-sm pt-5 flex-wrap">
+      <a th:href="@{/entrenador}" class="flex items-center gap-1.5 text-primary-600 font-semibold hover:text-primary-700 transition">
+        <span data-icon="arrowLeft" data-cls="w-4 h-4"></span>Volver a mis clases
+      </a>
+    </div>
+
+    <div class="mt-4">
+      <p class="ch-label-tiny">Alumnos de la clase</p>
+      <h1 class="font-display text-3xl font-bold text-slate-900 mt-1" th:text="${d.clase.nombre}"></h1>
+      <p class="text-sm text-gray-500 mt-1.5" th:text="${@fmt.fechaLarga(d.clase.fecha)} + ' · ' + ${d.clase.horaInicio} + ' - ' + ${d.clase.horaFin} + ' hrs · ' + ${d.clase.cancha}"></p>
+    </div>
+
+    <div class="grid sm:grid-cols-3 gap-4 mt-6">
+      <div class="card p-5"><p class="ch-label-tiny">Alumnos</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${d.clase.inscritos} + ' / ' + ${d.clase.cupoMax}"></p></div>
+      <div class="card p-5"><p class="ch-label-tiny">Asistieron</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${d.clase.asistieron}"></p></div>
+      <div class="card p-5"><p class="ch-label-tiny">Cobrado</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${@fmt.pen(d.clase.ingresos)}"></p></div>
+    </div>
+
+    <p th:if="${#lists.isEmpty(d.alumnos)}" class="text-sm text-gray-400 mt-8">Todavía no hay alumnos inscritos en esta clase.</p>
+    <div class="card overflow-hidden mt-6" th:unless="${#lists.isEmpty(d.alumnos)}"><div class="overflow-x-auto"><table class="admin-table">
+      <thead><tr><th>Alumno</th><th>Correo</th><th>Teléfono</th><th>Inscrito el</th><th>Pago</th><th>Estado</th><th>Asistencia</th></tr></thead>
+      <tbody>
+        <tr th:each="a : ${d.alumnos}">
+          <td class="font-medium" th:text="${a.nombre}"></td>
+          <td class="text-xs" th:text="${a.email}"></td>
+          <td class="text-xs" th:text="${#strings.isEmpty(a.telefono) ? '—' : a.telefono}"></td>
+          <td class="text-xs" th:text="${a.fechaInscripcion}"></td>
+          <td class="text-xs"><span th:if="${a.pagado != null}" th:text="${@fmt.pen(a.pagado)} + ' · ' + ${a.operacion}"></span><span th:if="${a.pagado == null}" class="text-gray-400">Sin cobro</span></td>
+          <td><span class="badge" th:classappend="${a.estado == 'asistio'} ? 'badge-completada' : 'badge-confirmada'" th:text="${a.estado == 'asistio'} ? 'Asistió' : 'Inscrito'"></span></td>
+          <td>
+            <form th:action="@{/entrenador/clases/{id}/inscripciones/{iid}/asistencia(id=${d.clase.id}, iid=${a.inscripcionId})}" method="post">
+              <input type="hidden" name="asistio" th:value="${a.estado != 'asistio'}">
+              <button type="submit" class="btn-outline !py-1 !px-2.5 !text-xs" th:text="${a.estado == 'asistio'} ? 'Desmarcar' : 'Marcar asistencia'"></button>
+            </form>
+          </td>
+        </tr>
+      </tbody>
+    </table></div></div>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

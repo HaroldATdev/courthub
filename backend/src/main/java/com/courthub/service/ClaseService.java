@@ -54,8 +54,8 @@ public class ClaseService {
     public ClaseDto paraPago(Long usuarioId, Long claseId) {
         Clase k = clases.findByIdAndActivaTrue(claseId).orElseThrow(() -> ApiException.notFound("Clase no encontrada."));
         boolean inscrito = inscripciones.findByClaseIdAndUsuarioId(claseId, usuarioId)
-                .map(i -> Inscripcion.INSCRITO.equals(i.getEstado())).orElse(false);
-        return ClaseDto.de(k, (int) inscripciones.countByClaseIdAndEstado(claseId, Inscripcion.INSCRITO), inscrito);
+                .map(Inscripcion::estaActiva).orElse(false);
+        return ClaseDto.de(k, (int) inscripciones.countByClaseIdAndEstadoIn(claseId, Inscripcion.ACTIVAS), inscrito);
     }
 
     /** Inscripción sin datos de pago (API REST): válida para clases gratuitas y con la pasarela simulada. */
@@ -79,10 +79,10 @@ public class ClaseService {
             throw ApiException.conflict("Esta clase ya se realizó y no admite inscripciones.");
         }
         var existente = inscripciones.findByClaseIdAndUsuarioId(claseId, usuarioId);
-        if (existente.isPresent() && Inscripcion.INSCRITO.equals(existente.get().getEstado())) {
+        if (existente.isPresent() && existente.get().estaActiva()) {
             throw ApiException.conflict("Ya estás inscrito en esta clase.");
         }
-        long ocupados = inscripciones.countByClaseIdAndEstado(claseId, Inscripcion.INSCRITO);
+        long ocupados = inscripciones.countByClaseIdAndEstadoIn(claseId, Inscripcion.ACTIVAS);
         if (ocupados >= clase.getCupoMaximo()) {
             throw ApiException.conflict("Lo sentimos, el cupo está lleno.");
         }

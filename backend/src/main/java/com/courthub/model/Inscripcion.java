@@ -16,6 +16,10 @@ public class Inscripcion {
     public static final String INSCRITO = "inscrito";
     public static final String CANCELADO = "cancelado";
     public static final String ASISTIO = "asistio";
+    /** Estados en los que la persona sigue dentro de la clase (ocupa cupo): inscrito o ya asistió. */
+    public static final java.util.List<String> ACTIVAS = java.util.List.of(INSCRITO, ASISTIO);
+
+    public boolean estaActiva() { return ACTIVAS.contains(estado); }
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

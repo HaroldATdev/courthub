@@ -54,6 +54,14 @@ services:
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       MAIL_FROM: ${MAIL_FROM:-}
+      # Correo por API HTTPS (Brevo): para hosting donde el SMTP está bloqueado (p. ej. Render gratuito)
+      BREVO_API_KEY: ${BREVO_API_KEY:-}
+      BREVO_API_URL: ${BREVO_API_URL:-https://api.brevo.com/v3/smtp/email}
+      # Verificación en dos pasos por correo: solo se activa si hay un proveedor de correo; TWOFA_ENABLED=false la apaga
+      TWOFA_ENABLED: ${TWOFA_ENABLED:-true}
+      # Pagos: sin llaves se usa la pasarela simulada; con llaves de prueba de Culqi cobra en su sandbox
+      CULQI_PUBLIC_KEY: ${CULQI_PUBLIC_KEY:-}
+      CULQI_SECRET_KEY: ${CULQI_SECRET_KEY:-}
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       DEMO_PASSWORD: ${DEMO_PASSWORD:-}
     ports:

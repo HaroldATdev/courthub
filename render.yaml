@@ -41,6 +41,19 @@ services:
         sync: false
       - key: MAIL_PASSWORD
         sync: false
+      - key: MAIL_FROM
+        sync: false
+      # Correo por API HTTPS de Brevo (recomendado en Render: el SMTP puede estar bloqueado en el plan gratuito)
+      - key: BREVO_API_KEY
+        sync: false
+      # Verificación en dos pasos por correo (se activa sola si hay proveedor de correo; "false" la apaga)
+      - key: TWOFA_ENABLED
+        value: "true"
+      # Pagos en sandbox con Culqi (llaves de PRUEBA pk_test_ / sk_test_); sin ellas se usa la pasarela simulada
+      - key: CULQI_PUBLIC_KEY
+        sync: false
+      - key: CULQI_SECRET_KEY
+        sync: false
       - key: ADMIN_PASSWORD
         sync: false
       - key: DEMO_PASSWORD

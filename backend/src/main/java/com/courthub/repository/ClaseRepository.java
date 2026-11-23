@@ -32,4 +32,8 @@ public interface ClaseRepository extends JpaRepository<Clase, Long> {
     List<Clase> findAllByOrderByFechaDescHoraInicioDesc();
 
     long countByActivaTrueAndFechaGreaterThanEqual(LocalDate fecha);
+
+    /** Clases de un entrenador, de la más reciente a la más antigua. */
+    @EntityGraph(attributePaths = {"cancha"})
+    List<Clase> findByEntrenadorIdOrderByFechaDescHoraInicioDesc(Long entrenadorId);
 }

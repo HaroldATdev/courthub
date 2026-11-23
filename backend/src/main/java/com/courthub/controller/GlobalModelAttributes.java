@@ -23,7 +23,8 @@ import java.util.Map;
  */
 @ControllerAdvice(assignableTypes = {
         AuthViewController.class, CanchaViewController.class, ReservaViewController.class,
-        ClaseViewController.class, AdminViewController.class, PerfilViewController.class})
+        ClaseViewController.class, AdminViewController.class, PerfilViewController.class,
+        EntrenadorViewController.class})
 @RequiredArgsConstructor
 public class GlobalModelAttributes {
 
@@ -44,6 +45,11 @@ public class GlobalModelAttributes {
     @ModelAttribute("esAdmin")
     public boolean esAdmin(@AuthenticationPrincipal AuthUser usuario) {
         return usuario != null && usuario.esAdmin();
+    }
+
+    @ModelAttribute("esEntrenador")
+    public boolean esEntrenador(@AuthenticationPrincipal AuthUser usuario) {
+        return usuario != null && AuthUser.ENTRENADOR.equals(usuario.rol());
     }
 
     /** Filtros del dashboard y de clases: "todos" + deportes activos de la tabla "deportes". */
