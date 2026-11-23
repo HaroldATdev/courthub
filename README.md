@@ -188,6 +188,12 @@ El primer arranque tarda unos minutos (Maven descarga dependencias). La base de 
 > El login acepta el **nombre de usuario o el correo**. Las cuentas de **cliente** (registro normal o Google) nacen en estado **activo** y entran de inmediato. Quien se registra con el perfil **administrador** queda **pendiente** hasta que otro administrador lo active en *Administración → Usuarios* (si no, cualquiera podría darse acceso total al panel).
 >
 > **Pagos:** cada reserva cobrada deja un registro en la tabla `pagos` (número de operación, método, últimos 4 dígitos de la tarjeta, subtotal, cargo, monto, estado `aprobado`/`reembolsado`, proveedor). Al cancelar la reserva el pago pasa a `reembolsado`. El proveedor es `simulado` hasta integrar una pasarela.
+>
+> **Cierre del flujo de venta (entrega final):**
+> - **Boleta en PDF:** cada reserva cobrada tiene su boleta (`GET /reservas/{id}/boleta`, serie `B001`, número correlativo, datos del cliente, detalle, op. gravada, IGV 18 % y total). La descarga el dueño de la reserva desde *Mis reservas → Boleta PDF* o el administrador desde *Reservas*. Es un comprobante de demostración: no se envía a SUNAT. Los datos del emisor se configuran con `courthub.emisor.razon-social`, `courthub.emisor.ruc` y `courthub.emisor.direccion`.
+> - **Estado de la reserva:** una reserva `confirmada` pasa sola a `completada` cuando termina su bloque (tarea programada cada 5 minutos, hora de Lima); el administrador también puede completarla a mano. Si el admin confirma una reserva que estaba pendiente se registra su cobro.
+> - **Reporte de ventas (`/admin/ventas`):** ventas por mes y por año con filtro de año y mes, indicadores (total, operaciones, ticket promedio, reembolsado), gráfico, detalle con enlace a cada boleta, exportación a CSV e impresión a PDF. Solo suman los pagos `aprobado`; los reembolsados se informan aparte.
+> - **Navegación:** todas las páginas tienen opción de retorno (*Volver a Canchas*, *Volver al resumen* en cada sección del panel, *Volver a iniciar sesión*, botón *Volver* en la página de error).
 
 > 🔐 **Claves en producción:** `Password123` solo vale para el entorno local. En el despliegue público la aplicación lee las variables `ADMIN_PASSWORD` (cuenta `admin`) y `DEMO_PASSWORD` (cuentas `gdiaz`, `crojas`, `pmunoz`, `asoto`, `lperez`) y sobrescribe las claves del seed en cada arranque (`DataInitializer.aplicarClavesDeEntorno`). Así la clave real nunca se publica en GitHub.
 
@@ -319,7 +325,7 @@ Funciona de punta a punta: acceso (usuario, correo y Google), registro con valid
 | **Pago de reservas** | **Registrado pero simulado.** Cada reserva deja su cobro en la tabla `pagos` (proveedor `simulado`), pero la tarjeta no se envía a ninguna pasarela y no se mueve dinero. Los métodos PayPal y Webpay son solo etiquetas. | Fase 2 (sandbox) |
 | **Pago de clases** | La clase tiene precio, pero la inscripción no cobra. | Fase 2 |
 | **Rol entrenador** | Se puede asignar a clases, pero no tiene ambiente propio: ve lo mismo que un cliente y no puede consultar sus clases ni sus alumnos (solo el administrador). | Pendiente |
-| **Estados de reserva** | El flujo normal crea reservas `confirmada`; `pendiente` y `completada` solo se asignan a mano desde el panel admin (las pasadas se clasifican por fecha, pero el estado no cambia solo). | Fase 2 (`pendiente` con pago) |
+| **Estados de reserva** | El flujo normal crea reservas `confirmada` y pasan solas a `completada` al terminar el bloque. `pendiente` solo se asigna a mano desde el panel admin (con una pasarela real sería el estado previo al pago). | Fase 2 (`pendiente` con pago) |
 | **Reembolsos y cancelación** | El mensaje habla de "créditos CourtHub", pero no existen créditos ni se aplica la regla de las 24 horas del reglamento. | Pendiente |
 | **Horarios por cancha** | La tabla `disponibilidad_canchas` existe pero no se usa: todas las canchas tienen los mismos bloques (08:00 a 23:00). | Pendiente |
 | **Correo** | Solo se usa para recuperar contraseña; no hay confirmación de reserva ni recordatorios. | Fase 3 |

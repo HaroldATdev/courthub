@@ -10,6 +10,7 @@
       <h1 class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${status == 404 ? 'Página no encontrada' : (status == 403 ? 'Acceso denegado' : 'Algo salió mal')}"></h1>
       <p class="text-sm text-gray-500 mt-2" th:text="${mensaje != null ? mensaje : 'La página que buscas no existe o no está disponible.'}"></p>
       <div class="flex justify-center gap-3 mt-7">
+        <a href="javascript:history.back()" class="btn-outline">Volver</a>
         <a th:href="@{/}" class="btn-primary">Ir al inicio</a>
         <a th:href="@{/login}" class="btn-outline">Iniciar sesión</a>
       </div>

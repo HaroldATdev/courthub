@@ -43,13 +43,21 @@ public class PagoService {
         });
     }
 
-    /** Si una reserva cancelada se reactiva desde el panel admin, su cobro vuelve a ser válido. */
+    /**
+     * Cuando el admin confirma o completa una reserva, debe existir su cobro aprobado: si estaba reembolsado
+     * (reserva reactivada) vuelve a aprobado; si nunca se cobró (reserva pendiente, p. ej. pago en el local)
+     * se registra el cobro con el método de la reserva.
+     */
     @Transactional
-    public void reactivar(Long reservaId) {
-        pagos.findByReservaIdAndEstado(reservaId, Pago.REEMBOLSADO).ifPresent(p -> {
-            p.setEstado(Pago.APROBADO);
-            pagos.save(p);
-        });
+    public void asegurarCobro(Reserva reserva) {
+        if (pagos.findByReservaIdAndEstado(reserva.getId(), Pago.APROBADO).isPresent()) return;
+        var reembolsado = pagos.findByReservaIdAndEstado(reserva.getId(), Pago.REEMBOLSADO);
+        if (reembolsado.isPresent()) {
+            reembolsado.get().setEstado(Pago.APROBADO);
+            pagos.save(reembolsado.get());
+        } else {
+            registrarAprobado(reserva, reserva.getMetodoPago(), null);
+        }
     }
 
     /** Número de operación único, p. ej. OP-48210377. */

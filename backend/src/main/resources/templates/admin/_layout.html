@@ -9,11 +9,14 @@
     <h1 class="font-display text-3xl font-bold text-slate-900 mt-1" th:text="${titulo}">Resumen</h1>
     <p class="text-sm text-gray-500 mt-1.5" th:text="${subtitulo}"></p>
   </div>
+  <a th:if="${seccion != 'resumen'}" th:href="@{/admin}" class="btn-outline !py-2 print:hidden"><span data-icon="arrowLeft" data-cls="w-4 h-4"></span>Volver al resumen</a>
+  <a th:if="${seccion == 'resumen'}" th:href="@{/dashboard}" class="btn-outline !py-2"><span data-icon="arrowLeft" data-cls="w-4 h-4"></span>Volver a la app</a>
 </div>
 
 <nav th:fragment="sidebar" class="card p-2 flex lg:flex-col gap-1 overflow-x-auto lg:sticky lg:top-20">
   <a th:href="@{/admin}" class="admin-nav-btn" th:classappend="${seccion == 'resumen'} ? 'active'"><span data-icon="activity" data-cls="w-4 h-4"></span><span>Resumen</span></a>
   <a th:href="@{/admin/reservas}" class="admin-nav-btn" th:classappend="${seccion == 'reservas'} ? 'active'"><span data-icon="calendar" data-cls="w-4 h-4"></span><span>Reservas</span></a>
+  <a th:href="@{/admin/ventas}" class="admin-nav-btn" th:classappend="${seccion == 'ventas'} ? 'active'"><span data-icon="star" data-cls="w-4 h-4"></span><span>Ventas</span></a>
   <a th:href="@{/admin/canchas}" class="admin-nav-btn" th:classappend="${seccion == 'canchas'} ? 'active'"><span data-icon="pin" data-cls="w-4 h-4"></span><span>Canchas</span></a>
   <a th:href="@{/admin/clases}" class="admin-nav-btn" th:classappend="${seccion == 'clases'} ? 'active'"><span data-icon="star" data-cls="w-4 h-4"></span><span>Clases</span></a>
   <a th:href="@{/admin/inscripciones}" class="admin-nav-btn" th:classappend="${seccion == 'inscripciones'} ? 'active'"><span data-icon="checkCircle" data-cls="w-4 h-4"></span><span>Inscripciones</span></a>

@@ -4,6 +4,7 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.autoconfigure.security.servlet.UserDetailsServiceAutoConfiguration;
 import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * CourtHub API — Punto de entrada de la aplicación Spring Boot.
@@ -11,6 +12,7 @@ import org.springframework.scheduling.annotation.EnableAsync;
  * Se excluye el usuario por defecto de Spring Security: la autenticación es 100 % JWT.
  */
 @EnableAsync
+@EnableScheduling
 @SpringBootApplication(exclude = UserDetailsServiceAutoConfiguration.class)
 public class CourtHubApplication {
 

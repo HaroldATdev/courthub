@@ -10,6 +10,9 @@ import com.courthub.dto.form.Formularios.UsuarioForm;
 import com.courthub.exception.ApiException;
 import com.courthub.security.AuthUser;
 import com.courthub.service.AdminService;
+import com.courthub.service.VentasService;
+import com.courthub.service.VentasService.Reporte;
+import com.courthub.service.VentasService.Venta;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -39,6 +42,7 @@ import java.util.Map;
 public class AdminViewController {
 
     private final AdminService admin;
+    private final VentasService ventas;
 
     /* =====================================================================
        RESUMEN
@@ -126,6 +130,50 @@ public class AdminViewController {
                     r.metodoPago(), r.estado()));
         }
         return descarga("reservas-courthub.csv", sb.toString());
+    }
+
+    /* =====================================================================
+       REPORTE DE VENTAS (por mes y por año, sobre la tabla "pagos")
+       ===================================================================== */
+
+    @GetMapping("/ventas")
+    public String ventas(@RequestParam(required = false) String anio, @RequestParam(required = false) String mes, Model model) {
+        Reporte r = ventas.reporte(entero(anio), entero(mes));
+        List<Map<String, Object>> serie = new ArrayList<>();
+        List<String> nombres = new ArrayList<>();
+        for (VentasService.Periodo p : r.porMes()) {
+            serie.add(Map.of("mes", String.format("%d-%02d", p.anio(), p.mes()), "total", p.total(), "reservas", p.operaciones()));
+            nombres.add(nombreMes(p.mes()));
+        }
+        model.addAttribute("r", r);
+        model.addAttribute("nombresMes", nombres);
+        model.addAttribute("nombrePeriodo", r.mes() == 0 ? "Año " + r.anio() : nombreMes(r.mes()) + " " + r.anio());
+        model.addAttribute("grafico", GraficoBarras.de(serie));
+        model.addAttribute("seccion", "ventas");
+        return "admin/ventas";
+    }
+
+    @GetMapping(value = "/ventas/exportar", produces = "text/csv")
+    public ResponseEntity<byte[]> exportarVentas(@RequestParam(required = false) String anio, @RequestParam(required = false) String mes) {
+        Reporte r = ventas.reporte(entero(anio), entero(mes));
+        StringBuilder sb = new StringBuilder("﻿Boleta;Operacion;Fecha;Reserva;Cliente;Cancha;Metodo;Subtotal;Cargo;Total\n");
+        for (Venta v : r.detalle()) {
+            sb.append(csv(v.boleta(), v.operacion(), v.fecha().toLocalDateTime().toString().replace('T', ' '),
+                    v.codigo(), v.cliente(), v.cancha(), v.metodo(), v.subtotal(), v.cargo(), v.total()));
+        }
+        String periodo = r.mes() == 0 ? String.valueOf(r.anio()) : r.anio() + "-" + String.format("%02d", r.mes());
+        return descarga("ventas-courthub-" + periodo + ".csv", sb.toString());
+    }
+
+    /** Parámetro numérico tolerante: un valor no numérico se ignora (el reporte usa su valor por defecto). */
+    private static Integer entero(String s) {
+        try { return s == null || s.isBlank() ? null : Integer.valueOf(s.trim()); }
+        catch (NumberFormatException e) { return null; }
+    }
+
+    private static String nombreMes(int m) {
+        String n = java.time.Month.of(m).getDisplayName(java.time.format.TextStyle.FULL, java.util.Locale.forLanguageTag("es-PE"));
+        return Character.toUpperCase(n.charAt(0)) + n.substring(1);
     }
 
     /* =====================================================================

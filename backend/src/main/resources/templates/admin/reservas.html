@@ -48,6 +48,7 @@
               <td><span th:replace="~{admin/_layout :: estado(${r.estado})}"></span></td>
               <td>
                 <div class="flex gap-1.5">
+                  <a th:if="${r.estado == 'confirmada' or r.estado == 'completada'}" th:href="@{/reservas/{id}/boleta(id=${r.id})}" target="_blank" rel="noopener" class="btn-outline !py-1 !px-2.5 !text-xs">Boleta</a>
                   <form th:if="${r.estado == 'pendiente'}" th:action="@{/admin/reservas/{id}/estado(id=${r.id})}" method="post"><input type="hidden" name="volver" th:value="${volver}"><button name="estado" value="confirmada" class="btn-outline !py-1 !px-2.5 !text-xs">Confirmar</button></form>
                   <form th:if="${r.estado == 'pendiente' or r.estado == 'confirmada'}" th:action="@{/admin/reservas/{id}/estado(id=${r.id})}" method="post"><input type="hidden" name="volver" th:value="${volver}"><button name="estado" value="completada" class="btn-outline !py-1 !px-2.5 !text-xs">Completar</button></form>
                   <form th:if="${r.estado == 'pendiente' or r.estado == 'confirmada'}" th:action="@{/admin/reservas/{id}/estado(id=${r.id})}" method="post" data-confirm="¿Cancelar la reserva? El bloque quedará libre."><input type="hidden" name="volver" th:value="${volver}"><button name="estado" value="cancelada" class="btn-danger !py-1 !px-2.5 !text-xs">Cancelar</button></form>

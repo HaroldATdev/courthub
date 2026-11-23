@@ -6,6 +6,7 @@
   <header th:replace="~{fragments/layout :: header('reservas')}"></header>
 
   <main class="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 pb-10 pt-8">
+    <a th:href="@{/dashboard}" class="inline-flex items-center gap-1.5 text-sm text-slate-500 hover:text-slate-800 mb-4"><span data-icon="arrowLeft" data-cls="w-4 h-4"></span>Volver a Canchas</a>
     <h1 class="font-display text-3xl font-bold text-slate-900">Mis Reservas</h1>
     <p class="text-sm text-gray-500 mt-1.5">Gestiona tus reservas y consulta tu historial.</p>
 
@@ -36,6 +37,7 @@
           <div class="text-right"><p class="ch-label-tiny">Total pagado</p><p class="font-display font-bold text-slate-900" th:text="${@fmt.pen(r.total)}"></p></div>
           <span class="badge" th:classappend="'badge-' + ${r.estado}" th:text="${#strings.capitalize(r.estado)}"></span>
           <div class="flex gap-2 ml-auto md:ml-0">
+            <a th:if="${r.estado == 'confirmada' or r.estado == 'completada'}" th:href="@{/reservas/{id}/boleta(id=${r.id})}" target="_blank" rel="noopener" class="btn-outline">Boleta PDF</a>
             <th:block th:if="${r.esProxima(hoyFecha)}">
               <button type="button" class="btn-outline" data-reprogramar th:attr="data-id=${r.id}, data-nombre=${r.cancha.nombre}, data-fecha=${r.fecha}, data-hora=${r.horaInicio}">Reprogramar</button>
               <form th:action="@{/reservas/{id}/cancelar(id=${r.id})}" method="post" th:attr="data-confirm='¿Cancelar tu reserva en ' + ${r.cancha.nombre} + ' del ' + ${@fmt.fecha(r.fecha, 'EEEE d MMM')} + '?'">
@@ -101,7 +103,7 @@
   </div>
 
   <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
-  <script>
+  <script th:inline="none">
     (function () {
       var form = document.getElementById('repro-form');
       var baseAction = form.getAttribute('action');

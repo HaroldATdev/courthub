@@ -6,13 +6,17 @@ import com.courthub.dto.form.Formularios.ReprogramarForm;
 import com.courthub.dto.form.Formularios.ReservaForm;
 import com.courthub.exception.ApiException;
 import com.courthub.security.AuthUser;
+import com.courthub.service.BoletaService;
 import com.courthub.service.CanchaService;
 import com.courthub.service.ReservaService;
 import com.courthub.service.ReservaService.Cotizacion;
 import com.courthub.util.Horarios;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -33,6 +37,7 @@ public class ReservaViewController {
 
     private final ReservaService reservaService;
     private final CanchaService canchaService;
+    private final BoletaService boletaService;
 
     /* ---------------- Pago ---------------- */
 
@@ -136,6 +141,16 @@ public class ReservaViewController {
         model.addAttribute("hoyFecha", hoy);
         if (!model.containsAttribute("reprogramarForm")) model.addAttribute("reprogramarForm", new ReprogramarForm());
         return "mis-reservas";
+    }
+
+    /** Boleta de venta en PDF (dueño de la reserva o administrador). */
+    @GetMapping("/reservas/{id}/boleta")
+    public ResponseEntity<byte[]> boleta(@AuthenticationPrincipal AuthUser usuario, @PathVariable Long id) {
+        BoletaService.Boleta b = boletaService.generar(id, usuario);
+        return ResponseEntity.ok()
+                .contentType(MediaType.APPLICATION_PDF)
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + b.nombreArchivo() + "\"")
+                .body(b.pdf());
     }
 
     @PostMapping("/reservas/{id}/cancelar")

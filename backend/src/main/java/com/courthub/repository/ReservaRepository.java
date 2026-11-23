@@ -6,6 +6,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -18,6 +19,14 @@ import java.util.Optional;
 public interface ReservaRepository extends JpaRepository<Reserva, Long>, JpaSpecificationExecutor<Reserva> {
 
     boolean existsByCodigo(String codigo);
+
+    /** Pasa a "completada" las reservas confirmadas cuyo bloque ya terminó (hora de Lima). */
+    @Modifying
+    @Query("""
+            UPDATE Reserva r SET r.estado = 'completada'
+            WHERE r.estado = 'confirmada' AND (r.fecha < :hoy OR (r.fecha = :hoy AND r.horaFin <= :ahora))
+            """)
+    int completarVencidas(@Param("hoy") LocalDate hoy, @Param("ahora") LocalTime ahora);
 
     @EntityGraph(attributePaths = {"cancha"})
     List<Reserva> findByUsuarioIdOrderByFechaDescHoraInicioDesc(Long usuarioId);

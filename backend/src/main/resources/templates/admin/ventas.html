@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<!-- Vista ERP: Reporte de ventas por mes y año · Controlador: AdminViewController#ventas / #exportarVentas -->
+<html lang="es" xmlns:th="http://www.thymeleaf.org">
+<head th:replace="~{fragments/layout :: head('Admin · Ventas')}"></head>
+<body class="font-sans bg-[#f6f7f7] text-slate-800 min-h-screen flex flex-col">
+  <header th:replace="~{fragments/layout :: header('admin')}"></header>
+
+  <main class="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 pb-10 pt-6">
+    <div th:replace="~{admin/_layout :: cabecera('Reporte de ventas', 'Ventas cobradas por mes y por año. Los pagos reembolsados (reservas canceladas) no suman.')}"></div>
+
+    <div class="grid lg:grid-cols-[220px_1fr] gap-6 mt-6 items-start">
+      <nav th:replace="~{admin/_layout :: sidebar}"></nav>
+
+      <section class="min-w-0 space-y-5">
+        <!-- Filtros (GET) -->
+        <form th:action="@{/admin/ventas}" method="get" class="card p-4 flex flex-wrap items-end gap-3 print:hidden">
+          <div><p class="ch-label-tiny mb-1.5">Año</p>
+            <select name="anio" class="ch-select">
+              <option th:each="a : ${r.anios}" th:value="${a}" th:text="${a}" th:selected="${a == r.anio}"></option>
+            </select></div>
+          <div><p class="ch-label-tiny mb-1.5">Mes</p>
+            <select name="mes" class="ch-select">
+              <option value="0">Todo el año</option>
+              <option th:each="n, it : ${nombresMes}" th:value="${it.count}" th:text="${n}" th:selected="${it.count == r.mes}"></option>
+            </select></div>
+          <button type="submit" class="btn-primary !py-2 !px-4 !text-[13px]">Ver reporte</button>
+          <a th:href="@{/admin/ventas/exportar(anio=${r.anio}, mes=${r.mes})}" class="btn-outline !py-2">Exportar CSV</a>
+          <button type="button" onclick="window.print()" class="btn-outline !py-2">Imprimir / PDF</button>
+        </form>
+
+        <h2 class="font-display text-xl font-bold text-slate-900" th:text="'Resumen · ' + ${nombrePeriodo}"></h2>
+
+        <!-- Indicadores del periodo -->
+        <div class="grid sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <div class="card p-5"><p class="ch-label-tiny">Ventas del periodo</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${@fmt.pen(r.periodo.total)}"></p><p class="text-xs text-gray-400 mt-1">Subtotal <span th:text="${@fmt.pen(r.periodo.subtotal)}"></span> + cargo <span th:text="${@fmt.pen(r.periodo.cargo)}"></span></p></div>
+          <div class="card p-5"><p class="ch-label-tiny">Operaciones</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${r.periodo.operaciones}"></p><p class="text-xs text-gray-400 mt-1">Boletas emitidas</p></div>
+          <div class="card p-5"><p class="ch-label-tiny">Ticket promedio</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${@fmt.pen(r.periodo.ticket)}"></p><p class="text-xs text-gray-400 mt-1">Por reserva cobrada</p></div>
+          <div class="card p-5"><p class="ch-label-tiny">Reembolsado</p><p class="font-display text-2xl font-bold text-slate-900 mt-1" th:text="${@fmt.pen(r.reembolsado)}"></p><p class="text-xs text-gray-400 mt-1" th:text="${r.reembolsos} + ' reserva(s) cancelada(s)'"></p></div>
+        </div>
+
+        <!-- Gráfico: ventas por mes del año -->
+        <div class="card p-6">
+          <div class="flex items-center justify-between"><h2 class="font-display font-semibold text-slate-900" th:text="'Ventas por mes · ' + ${r.anio}"></h2><span class="text-xs text-gray-400">S/</span></div>
+          <svg th:attr="viewBox='0 0 ' + ${grafico.ancho} + ' ' + ${grafico.alto}" class="w-full h-auto mt-4" role="img" aria-label="Ventas por mes">
+            <g th:each="l : ${grafico.grid}">
+              <line x1="56" th:attr="x2=${grafico.ancho - 12}, y1=${l.y}, y2=${l.y}" stroke="#eef0f2" stroke-width="1"/>
+              <text x="48" th:attr="y=${l.y + 4}" text-anchor="end" font-size="11" fill="#94a3b8" th:text="${l.etiqueta}"></text>
+            </g>
+            <g th:each="b : ${grafico.barras}" class="admin-bar">
+              <title th:text="${@fmt.mes(b.mes)} + ': ' + ${@fmt.pen(b.total)} + ' · ' + ${b.reservas} + ' operaciones'"></title>
+              <rect th:if="${b.h gt 0}" th:attr="x=${b.x}, y=${b.y}, width=${b.w}, height=${b.h}" rx="4" fill="#10b981"/>
+              <rect th:if="${b.h le 0}" th:attr="x=${b.x}, y=${b.y - 2}, width=${b.w}" height="2" fill="#d1d5db"/>
+              <text th:if="${b.maximo}" th:attr="x=${b.x + b.w / 2}, y=${b.y - 6}" text-anchor="middle" font-size="11" font-weight="600" fill="#334155" th:text="${@fmt.pen(b.total)}"></text>
+              <text th:attr="x=${b.x + b.w / 2}, y=${grafico.alto - 12}" text-anchor="middle" font-size="11" fill="#64748b" th:text="${@fmt.mes(b.mes)}"></text>
+            </g>
+            <line x1="56" th:attr="x2=${grafico.ancho - 12}, y1=${grafico.baseY}, y2=${grafico.baseY}" stroke="#cbd5e1" stroke-width="1"/>
+          </svg>
+        </div>
+
+        <div class="grid xl:grid-cols-2 gap-5">
+          <!-- Tabla por mes -->
+          <div class="card overflow-hidden">
+            <h3 class="font-display font-semibold text-slate-900 px-5 pt-5" th:text="'Por mes · ' + ${r.anio}"></h3>
+            <div class="overflow-x-auto mt-3"><table class="admin-table">
+              <thead><tr><th>Mes</th><th>Operaciones</th><th>Subtotal</th><th>Cargo</th><th>Total</th></tr></thead>
+              <tbody>
+                <tr th:each="p, it : ${r.porMes}" th:classappend="${p.mes == r.mes} ? 'bg-primary-50'">
+                  <td><a th:href="@{/admin/ventas(anio=${r.anio}, mes=${p.mes})}" class="link-green" th:text="${nombresMes[it.index]}"></a></td>
+                  <td th:text="${p.operaciones}"></td>
+                  <td th:text="${@fmt.pen(p.subtotal)}"></td>
+                  <td th:text="${@fmt.pen(p.cargo)}"></td>
+                  <td class="font-semibold" th:text="${@fmt.pen(p.total)}"></td>
+                </tr>
+                <tr class="font-semibold bg-gray-50">
+                  <td>Total del año</td>
+                  <td th:text="${#aggregates.sum(r.porMes.![operaciones])}"></td>
+                  <td th:text="${@fmt.pen(#aggregates.sum(r.porMes.![subtotal]))}"></td>
+                  <td th:text="${@fmt.pen(#aggregates.sum(r.porMes.![cargo]))}"></td>
+                  <td th:text="${@fmt.pen(#aggregates.sum(r.porMes.![total]))}"></td>
+                </tr>
+              </tbody>
+            </table></div>
+          </div>
+
+          <!-- Tabla por año -->
+          <div class="card overflow-hidden self-start">
+            <h3 class="font-display font-semibold text-slate-900 px-5 pt-5">Por año</h3>
+            <div class="overflow-x-auto mt-3"><table class="admin-table">
+              <thead><tr><th>Año</th><th>Operaciones</th><th>Ticket prom.</th><th>Total</th></tr></thead>
+              <tbody>
+                <tr th:each="p : ${r.porAnio}" th:classappend="${p.anio == r.anio} ? 'bg-primary-50'">
+                  <td><a th:href="@{/admin/ventas(anio=${p.anio})}" class="link-green" th:text="${p.anio}"></a></td>
+                  <td th:text="${p.operaciones}"></td>
+                  <td th:text="${@fmt.pen(p.ticket)}"></td>
+                  <td class="font-semibold" th:text="${@fmt.pen(p.total)}"></td>
+                </tr>
+              </tbody>
+            </table></div>
+          </div>
+        </div>
+
+        <!-- Detalle del periodo -->
+        <div class="card overflow-hidden">
+          <h3 class="font-display font-semibold text-slate-900 px-5 pt-5" th:text="'Detalle de ventas · ' + ${nombrePeriodo} + ' (' + ${#lists.size(r.detalle)} + ')'"></h3>
+          <p th:if="${#lists.isEmpty(r.detalle)}" class="text-sm text-gray-400 px-5 py-6">No hay ventas en este periodo.</p>
+          <div class="overflow-x-auto mt-3" th:unless="${#lists.isEmpty(r.detalle)}"><table class="admin-table">
+            <thead><tr><th>Boleta</th><th>Fecha</th><th>Reserva</th><th>Cliente</th><th>Cancha</th><th>Medio de pago</th><th>Total</th><th class="print:hidden"></th></tr></thead>
+            <tbody>
+              <tr th:each="v : ${r.detalle}">
+                <td class="font-mono text-xs" th:text="${v.boleta}"></td>
+                <td class="text-xs" th:text="${#temporals.format(v.fecha, 'dd/MM/yyyy HH:mm')}"></td>
+                <td class="font-mono text-xs" th:text="${v.codigo}"></td>
+                <td th:text="${v.cliente}"></td>
+                <td th:text="${v.cancha}"></td>
+                <td class="text-xs" th:text="${v.metodo}"></td>
+                <td class="font-semibold" th:text="${@fmt.pen(v.total)}"></td>
+                <td class="print:hidden"><a th:href="@{/reservas/{id}/boleta(id=${v.reservaId})}" target="_blank" rel="noopener" class="btn-outline !py-1 !px-2.5 !text-xs">Boleta PDF</a></td>
+              </tr>
+            </tbody>
+          </table></div>
+        </div>
+
+        <a th:href="@{/admin}" class="btn-outline print:hidden"><span data-icon="arrowLeft" data-cls="w-4 h-4"></span>Volver al resumen</a>
+      </section>
+    </div>
+  </main>
+
+  <footer th:replace="~{fragments/layout :: footer}"></footer>
+  <th:block th:replace="~{fragments/layout :: scripts}"></th:block>
+</body>
+</html>

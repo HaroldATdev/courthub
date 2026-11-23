@@ -338,12 +338,12 @@ public class AdminService {
                 throw ApiException.conflict("No se puede reactivar: el bloque ya está ocupado por otra reserva.");
             }
         }
-        boolean estabaCancelada = Reserva.CANCELADA.equals(r.getEstado());
         r.setEstado(req.estado());
-        // El cobro sigue a la reserva: cancelar lo reembolsa; reactivar lo vuelve a aprobar
+        r = reservas.save(r);
+        // El cobro sigue a la reserva: cancelar lo reembolsa; confirmar o completar garantiza un cobro aprobado
         if (Reserva.CANCELADA.equals(req.estado())) pagos.reembolsar(r.getId());
-        else if (estabaCancelada) pagos.reactivar(r.getId());
-        return ReservaDto.de(reservas.save(r), true);
+        else if (!Reserva.PENDIENTE.equals(req.estado())) pagos.asegurarCobro(r);
+        return ReservaDto.de(r, true);
     }
 
     /* =====================================================================
