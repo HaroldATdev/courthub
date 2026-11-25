@@ -328,7 +328,7 @@ El cobro pasa por una **pasarela** intercambiable (`pasarela/PasarelaPago`), ele
 - Alcance: reservas de cancha (subtotal + 10 % de cargo) e inscripciones a clases (precio de la clase). Cada pago aprobado queda en `pagos` con proveedor, referencia del cargo (`chr_test_…`) y los últimos 4 dígitos. Si la pasarela **rechaza** el pago, no queda ni la reserva/inscripción ni el pago (misma transacción) y se muestra el motivo.
 - Llaves: se crean en el panel de integración de Culqi (**Desarrollo → API Keys**) y se guardan **solo** en variables de entorno (Render → Environment). Nunca en el repositorio.
 - Tarjetas de prueba de Culqi: aprobada `4111 1111 1111 1111` (09/30, CVV 123); rechazadas, p. ej. `4000 0400 0000 0008` (fondos insuficientes) y `4000 0200 0000 0000` (robada).
-- **Verificación realizada:** la integración se probó contra un servidor que imita las respuestas documentadas de Culqi (cargo aprobado, cargo rechazado, token ausente, monto en céntimos, llave privada fuera de la página). **No se ha probado contra el sandbox real de Culqi**: falta hacerlo con llaves de prueba propias; el formato exacto de la respuesta de error del API real no se pudo confirmar en su documentación.
+- **Verificación realizada (25/11/2026):** se probó contra el **sandbox real de Culqi** con llaves de prueba: la ventana de Culqi Checkout abre con el total correcto, una tarjeta de rechazo (`4000 0400 0000 0008`, 03/30, CVV 295) deja el cargo como `operacion_denegada` en Culqi, CourtHub muestra el motivo y **no crea la reserva**, y la tarjeta aprobada (`4111 1111 1111 1111`, 09/30, CVV 123) deja el cargo `venta_exitosa`, la reserva confirmada y el pago con proveedor `culqi` y referencia `chr_test_…`. Detalles del API confirmados en la práctica: `POST https://api.culqi.com/v2/charges` con `Authorization: Bearer sk_test_…`, monto en céntimos y respuesta de error con `type`, `code`, `decline_code` y `user_message`. Las llaves se limpian al arrancar (espacios, comillas o coma al final) y el log avisa si una tiene forma rara o es de producción (`_live_`).
 
 ## ✉️ Correo y verificación en dos pasos (2FA)
 
@@ -354,7 +354,6 @@ La base de datos de producción está en **Supabase** (PostgreSQL); la aplicaci�
 
 | Pendiente | Detalle |
 |-----------|---------|
-| **Probar Culqi contra su sandbox real** | Crear cuenta de integración, cargar `CULQI_PUBLIC_KEY`/`CULQI_SECRET_KEY` en Render y hacer una reserva con la tarjeta de prueba. |
 | **Reembolso real** | Hoy cancelar marca el pago como `reembolsado` en la base, pero no devuelve el dinero en Culqi (faltaría `POST /refunds`). |
 | **Billeteras y 3-D Secure** | Yape/Plin y autenticación 3DS de Culqi. |
 | **Más correos** | Confirmación de reserva y recordatorios (el envío ya existe). |
@@ -366,7 +365,7 @@ Funciona de punta a punta: acceso (usuario, correo y Google) con verificación e
 
 | Flujo | Estado actual |
 |-------|---------------|
-| **Dinero real** | No se mueve dinero: la pasarela simulada no cobra y Culqi se usa solo con llaves de **prueba**. Los métodos PayPal y Webpay (modo simulado) son solo etiquetas. |
+| **Dinero real** | No se mueve dinero: la pasarela simulada no cobra y Culqi se usa solo con llaves de **prueba** (sandbox verificado). Los métodos PayPal y Webpay (modo simulado) son solo etiquetas. |
 | **Reembolsos y cancelación** | El pago pasa a `reembolsado` en la base, pero no hay devolución en la pasarela, no existen los "créditos CourtHub" que menciona el mensaje y no se aplica la regla de las 24 horas. |
 | **Boleta** | Comprobante de demostración (serie `B001`, RUC ficticio): no se envía a SUNAT y no existe factura. |
 | **Horarios por cancha** | La tabla `disponibilidad_canchas` existe pero no se usa: todas las canchas tienen los mismos bloques (08:00 a 23:00). |

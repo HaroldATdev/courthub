@@ -30,8 +30,10 @@ public class CulqiPasarela implements PasarelaPago {
     private final RestClient http;
     private final ObjectMapper json = new ObjectMapper();
 
-    public CulqiPasarela(@Value("${CULQI_SECRET_KEY}") String llavePrivada,
+    public CulqiPasarela(@Value("${CULQI_SECRET_KEY}") String llavePrivadaOriginal,
                          @Value("${CULQI_API_URL:https://api.culqi.com/v2}") String apiUrl) {
+        String llavePrivada = Llaves.limpiar(llavePrivadaOriginal);
+        Llaves.avisarEstado("CULQI_SECRET_KEY", llavePrivadaOriginal, llavePrivada);
         this.http = com.courthub.util.Http.builder()
                 .baseUrl(apiUrl)
                 .defaultHeader(HttpHeaders.AUTHORIZATION, "Bearer " + llavePrivada)

@@ -69,5 +69,8 @@ Generadas el 23/11/2026 recorriendo la aplicación en **Brave** de forma automá
 | 25 | `25-2fa-pantalla-codigo.png` | **Verificación en dos pasos:** tras usuario y clave se pide el código de 6 dígitos enviado al correo (mostrado enmascarado). |
 | 26 | `26-2fa-codigo-incorrecto.png` | Código incorrecto: se informan los intentos que quedan (máximo 5). |
 | 27 | `27-2fa-acceso-concedido.png` | Código correcto: se concede el acceso y se redirige al ambiente del perfil. |
+| 28 | `28-culqi-ventana-de-pago.png` | **Pago con Culqi (sandbox):** al confirmar se abre la ventana segura de Culqi con el total a pagar (S/ 140.25); la tarjeta se escribe ahí y CourtHub nunca ve su número. |
+| 29 | `29-culqi-pago-rechazado.png` | Tarjeta de prueba de rechazo: Culqi deniega el cargo, CourtHub muestra el motivo ("tarjeta sin fondos suficientes") y no se crea la reserva. |
+| 30 | `30-culqi-reserva-confirmada.png` | Tarjeta de prueba aprobada: el cargo se registra en Culqi, la reserva queda confirmada en *Mis reservas* con su boleta y el pago guardado con proveedor `culqi`. |
 
-Notas para el informe: las capturas 25 a 27 se tomaron con un servidor de correo simulado (el código se leyó de ese servidor); en producción el código llega por Brevo. El pago es simulado: no se mueve dinero.
+Las capturas 28 a 30 se tomaron con llaves de prueba reales del sandbox de Culqi (no se mueve dinero). Notas para el informe: las capturas 25 a 27 se tomaron con un servidor de correo simulado (el código se leyó de ese servidor); en producción el código llega por Brevo. El pago es simulado: no se mueve dinero.

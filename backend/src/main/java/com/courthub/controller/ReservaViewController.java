@@ -42,7 +42,9 @@ public class ReservaViewController {
     private final PagoService pagoService;
 
     @org.springframework.beans.factory.annotation.Value("${CULQI_PUBLIC_KEY:}")
-    private String culqiPublicKey;
+    private String culqiPublicKeyBruta;
+
+    private String culqiPublicKey() { return com.courthub.pasarela.Llaves.limpiar(culqiPublicKeyBruta); }
 
     /* ---------------- Pago ---------------- */
 
@@ -102,7 +104,7 @@ public class ReservaViewController {
         model.addAttribute("horaFin", Horarios.hora(inicio.plusMinutes(Horarios.DURACION_BLOQUE_MIN)));
         model.addAttribute("cotizacion", Cotizacion.de(cancha.precioHora()));
         model.addAttribute("montoCentimos", Cotizacion.de(cancha.precioHora()).total().movePointRight(2).longValue());
-        model.addAttribute("culqiPublicKey", culqiPublicKey);
+        model.addAttribute("culqiPublicKey", culqiPublicKey());
         model.addAttribute("usaToken", pagoService.pasarela().usaToken());
     }
 

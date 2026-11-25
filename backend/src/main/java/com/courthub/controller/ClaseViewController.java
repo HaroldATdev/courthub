@@ -33,7 +33,9 @@ public class ClaseViewController {
     private final BoletaService boletaService;
 
     @Value("${CULQI_PUBLIC_KEY:}")
-    private String culqiPublicKey;
+    private String culqiPublicKeyBruta;
+
+    private String culqiPublicKey() { return com.courthub.pasarela.Llaves.limpiar(culqiPublicKeyBruta); }
 
     @GetMapping("/clases")
     public String clases(@AuthenticationPrincipal AuthUser usuario,
@@ -102,7 +104,7 @@ public class ClaseViewController {
         model.addAttribute("clase", clase);
         model.addAttribute("monto", clase.precio());
         model.addAttribute("montoCentimos", clase.precio().movePointRight(2).longValue());
-        model.addAttribute("culqiPublicKey", culqiPublicKey);
+        model.addAttribute("culqiPublicKey", culqiPublicKey());
         model.addAttribute("usaToken", pagoService.pasarela().usaToken());
     }
 
